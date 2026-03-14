@@ -8,3 +8,6 @@ crate-type = ["cdylib"]
 
 [dependencies]
 serde_json = { version = "1", default-features = false, features = ["alloc"] }
+
+[build-dependencies]
+cc = "1"

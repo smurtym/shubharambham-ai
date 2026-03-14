@@ -49,6 +49,10 @@ pub extern "C" fn bridge(
         Err(_) => return -2,
     };
 
+    // Set the ephemeris path once before dispatching to any handler.
+    // Safety: constant C string literal; pointer is valid for the call duration.
+    unsafe { swe_set_ephe_path(b"/ephe\0".as_ptr() as *const c_char) };
+
     match op {
         "sun_longitude" => handle_sun_longitude(input, output_ptr, output_max_len),
         _ => -1,
@@ -71,10 +75,6 @@ fn handle_sun_longitude(input: &str, output_ptr: *mut c_char, output_max_len: i3
     };
 
     // Call Swiss Ephemeris via FFI.
-    // Safety: constant C string literal; pointer is valid for the call duration.
-    let ephe_path = b"/ephe\0";
-    unsafe { swe_set_ephe_path(ephe_path.as_ptr() as *const c_char) };
-
     let mut xx = [0.0_f64; 6];
     let mut serr = [0_u8; 256];
     let ret = unsafe {
@@ -107,4 +107,57 @@ fn handle_sun_longitude(input: &str, output_ptr: *mut c_char, output_max_len: i3
         std::ptr::copy_nonoverlapping(bytes.as_ptr(), output_ptr as *mut u8, bytes.len());
     }
     needed
+}
+
+// ---------------------------------------------------------------------------
+// Unit tests
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Point the Swiss Ephemeris at the local ephe/ directory for tests.
+    /// Uses CARGO_MANIFEST_DIR so the path is correct regardless of cwd.
+    fn setup() {
+        let ephe_path = concat!(env!("CARGO_MANIFEST_DIR"), "/../ephe\0");
+        unsafe { swe_set_ephe_path(ephe_path.as_ptr() as *const c_char) };
+    }
+
+    /// bridge() must return -1 for an unrecognised operation.
+    #[test]
+    fn test_bridge_unknown_op() {
+        let op = b"unknown_op\0";
+        let input = b"{}\0";
+        let mut output = [0_u8; 256];
+        let ret = bridge(
+            op.as_ptr() as *const c_char,
+            input.as_ptr() as *const c_char,
+            output.as_mut_ptr() as *mut c_char,
+            output.len() as i32,
+        );
+        assert_eq!(ret, -1);
+    }
+
+    /// Sun longitude at J2000.0 (TJD 2451545.0) should be ≈ 280.37°.
+    #[test]
+    fn test_sun_longitude_j2000() {
+        setup();
+        let input = b"{\"tjd\":2451545.0}\0";
+        let mut output = [0_u8; 256];
+        let ret = handle_sun_longitude(
+            std::str::from_utf8(&input[..input.len() - 1]).unwrap(),
+            output.as_mut_ptr() as *mut c_char,
+            output.len() as i32,
+        );
+        assert!(ret > 0, "handle_sun_longitude returned error: {ret}");
+        let written = &output[..ret as usize];
+        let json: serde_json::Value =
+            serde_json::from_slice(written).expect("output is valid JSON");
+        let longitude = json["longitude"].as_f64().expect("longitude is f64");
+        assert!(
+            (longitude - 280.37).abs() < 0.5,
+            "Sun longitude {longitude} not within 0.5° of 280.37°"
+        );
+    }
 }

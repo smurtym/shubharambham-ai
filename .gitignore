@@ -21,3 +21,18 @@ Thumbs.db
 # Environment
 .env
 .env.*
+
+# npm
+node_modules/
+
+# Vite
+.vite/
+
+# Playwright
+playwright-report/
+test-results/
+
+# WASM build artifacts (Emscripten output in public/)
+public/astro.js
+public/astro.wasm
+public/astro.data

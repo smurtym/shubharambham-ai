@@ -61,7 +61,7 @@
     var Module = {
       onRuntimeInitialized: function () {
         var result = bridge('sun_longitude', JSON.stringify({ tjd: 2451545.0 }));
-        console.log('Sun longitude (J2000): ' + result.longitude.toFixed(6) + '\u00b0');
+        console.log('Sun longitude: ' + result.longitude.toFixed(2));
       }
     };
   </script>

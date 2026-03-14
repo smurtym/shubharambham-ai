@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 # build.sh — single entry point for the shubharambham-ai build pipeline
-# Usage: ./build.sh
+# Usage: ./build.sh [--skip-rust-tests] [--skip-playwright-tests]
 #
 # Phases:
+#   0. Flag parsing
 #   1. Prerequisite checks (all must pass before any compilation)
-#   2. Swiss Ephemeris C compilation → lib/libswe.a                     (added in T011)
-#   3. Rust WASM build + dist/ assembly                                  (added in T014)
-#   4. Static web assets copy                                            (added in T009)
+#   2. Swiss Ephemeris C compilation → lib/libswe.a
+#   2.5 Rust native unit tests (cargo test)
+#   3. Rust WASM build → public/ assembly
+#   4. npm install (if node_modules/ absent)
+#   5. npm run build (Vite: web/ → dist/)
+#   6. npm test (Playwright E2E gate)
 
 set -euo pipefail
 
@@ -16,6 +20,20 @@ EMAR="${EMAR:-emar}"
 
 log()  { echo "[build.sh] $*"; }
 fail() { echo "[build.sh] ERROR: $*" >&2; exit 1; }
+
+# ---------------------------------------------------------------------------
+# Phase 0 — Flag parsing
+# ---------------------------------------------------------------------------
+
+SKIP_RUST_TESTS=0
+SKIP_PLAYWRIGHT_TESTS=0
+
+for arg in "$@"; do
+  case "$arg" in
+    --skip-rust-tests)       SKIP_RUST_TESTS=1 ;;
+    --skip-playwright-tests) SKIP_PLAYWRIGHT_TESTS=1 ;;
+  esac
+done
 
 # ---------------------------------------------------------------------------
 # Phase 1 — Prerequisite checks
@@ -51,7 +69,10 @@ if ! rustup target list --installed 2>/dev/null | grep -q "wasm32-unknown-emscri
   fail "Rust target wasm32-unknown-emscripten not installed. Run:\n  rustup target add wasm32-unknown-emscripten"
 fi
 
-log "✓ Prerequisites OK (Emscripten $EMCC_VERSION, swisseph submodule, ephe/ files, Rust target)"
+# 1e. npm available
+command -v npm >/dev/null 2>&1 || { echo "ERROR: npm not found in PATH"; exit 1; }
+
+log "✓ Prerequisites OK (Emscripten $EMCC_VERSION, swisseph submodule, ephe/ files, Rust target, npm)"
 
 # ---------------------------------------------------------------------------
 # Phase 2 — Compile Swiss Ephemeris C sources → lib/libswe.a
@@ -78,30 +99,62 @@ done
 log "✓ libswe.a compiled → $LIB_DIR/libswe.a"
 
 # ---------------------------------------------------------------------------
-# Phase 3 — Rust WASM build; emcc writes output directly to dist/
+# Phase 2.5 — Rust native unit tests
 # ---------------------------------------------------------------------------
 
+if [ "$SKIP_RUST_TESTS" -eq 0 ]; then
+  log "Running Rust unit tests (native, no Emscripten needed)..."
+  (cd "$REPO_ROOT/astro-wasm" && unset LIBSWE_DIR && cargo test) || exit 1
+  log "✓ Rust tests passed"
+else
+  echo "⚠ WARNING: --skip-rust-tests set — skipping cargo test"
+fi
+
+# LIBSWE_DIR must be set unconditionally so Phase 3 WASM build always finds libswe.a,
+# regardless of whether cargo test was skipped.
 export LIBSWE_DIR="$LIB_DIR"
 
-# dist/ must exist before cargo runs — build.rs directs emcc output there.
-mkdir -p "$REPO_ROOT/dist"
+# ---------------------------------------------------------------------------
+# Phase 3 — Rust WASM build; emcc writes output directly to public/
+# ---------------------------------------------------------------------------
+
+# public/ must exist before cargo runs — build.rs directs emcc output there.
+mkdir -p "$REPO_ROOT/public"
 
 log "Building Rust WASM crate (astro-wasm)..."
 cd "$REPO_ROOT/astro-wasm"
 cargo build --target wasm32-unknown-emscripten --release 2>&1
 cd "$REPO_ROOT"
 
-if [[ ! -f "$REPO_ROOT/dist/astro.js" ]]; then
-  fail "dist/astro.js was not produced. Check the emcc link step above."
+if [[ ! -f "$REPO_ROOT/public/astro.js" ]]; then
+  fail "public/astro.js was not produced. Check the emcc link step above."
 fi
-log "✓ WASM artifacts written to dist/ (astro.js, astro.wasm, astro.data)"
+log "✓ WASM artifacts written to public/ (astro.js, astro.wasm, astro.data)"
 
 # ---------------------------------------------------------------------------
-# Phase 4 — Static web assets copy
+# Phase 4 — npm install (if node_modules/ absent)
 # ---------------------------------------------------------------------------
 
-mkdir -p "$REPO_ROOT/dist"
-cp "$REPO_ROOT/web/index.html" "$REPO_ROOT/web/style.css" "$REPO_ROOT/dist/"
-log "✓ Web assets copied to dist/"
+[ -d "$REPO_ROOT/node_modules" ] || npm install
 
-log "Build complete. Serve dist/ with: python3 -m http.server 8080 --directory dist/"
+# ---------------------------------------------------------------------------
+# Phase 5 — Vite build (web/ → dist/, public/ copied verbatim)
+# ---------------------------------------------------------------------------
+
+log "Running Vite build..."
+npm run build
+log "✓ Vite build complete — dist/ assembled"
+
+# ---------------------------------------------------------------------------
+# Phase 6 — Playwright E2E tests (final gate)
+# ---------------------------------------------------------------------------
+
+if [ "$SKIP_PLAYWRIGHT_TESTS" -eq 0 ]; then
+  log "Running Playwright E2E tests..."
+  npm test || exit 1
+  log "✓ Playwright tests passed"
+else
+  echo "⚠ WARNING: --skip-playwright-tests set — skipping npm test"
+fi
+
+log "Build complete."

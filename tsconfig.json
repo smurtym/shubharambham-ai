@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "target": "ES2022",
+    "lib": ["ES2022", "ESNext"]
+  },
+  "include": ["**/*.config.ts", "tests/**/*.ts"]
+}
