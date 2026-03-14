@@ -92,7 +92,7 @@ number in the range 0.0–360.0. No runtime exceptions are thrown.
    the browser console displays the Sun's ecliptic longitude for the hard-coded
    date in degrees, with at least 4 decimal places of precision.
 2. **Given** the console output, **When** compared against a reference value from
-   an independent ephemeris tool for J2000 (2000-01-01 12:00 TT), **Then** the
+   an independent ephemeris tool for J2000 (2000-01-01 12:00 UTC), **Then** the
    printed value is within 0.001° of the reference.
 
 ---
@@ -132,20 +132,32 @@ number in the range 0.0–360.0. No runtime exceptions are thrown.
   filesystem so they are available at runtime without a network request.
   `seas_18.se1` (asteroid data) MUST NOT be included; it is not required for
   Vedic astrology calculations.
-- **FR-003**: A Rust source file MUST contain a public function that calls the
-  Swiss Ephemeris C library via FFI to calculate the Sun's ecliptic longitude for
-  a hard-coded date (2000-01-01 12:00 UTC / J2000), and returns that value as a
-  floating-point number. The Rust crate MUST be compiled with the
+- **FR-003**: The Rust WASM crate MUST implement a single public exported function
+  `bridge(op_ptr, input_ptr, output_ptr, output_max_len) → i32` (see
+  `contracts/wasm-api-v1.md`) that dispatches named operations. The
+  `sun_longitude` operation MUST be handled as an internal route: it parses a
+  Julian Day Number in UTC from a JSON input payload, calls
+  the Swiss Ephemeris C library via FFI (`swe_calc_ut` with `SEFLG_SWIEPH`) to
+  calculate the Sun's ecliptic longitude, and writes a JSON result into the
+  caller-owned output buffer. The Rust crate MUST be compiled with the
   `wasm32-unknown-emscripten` target, with `emcc` acting as the linker, so that
   Rust and C are linked into a single WASM module in one Emscripten link step.
-- **FR-004**: The Rust WASM module MUST export that function so it is callable
-  from vanilla JavaScript.
+  The `sun_longitude` handler is a pipeline-verification proof-of-concept only;
+  it will not be part of production implementation.
+- **FR-004**: The Rust WASM module MUST expose exactly one JS-callable export:
+  `_bridge`. It MUST be the only entry in `-sEXPORTED_FUNCTIONS`. No per-operation
+  function is exported; all routing occurs inside Rust. `_malloc` and `_free` are
+  available via `-sALLOW_MEMORY_GROWTH=1` without additional
+  `EXPORTED_RUNTIME_METHODS` entries.
 - **FR-005**: The main `index.html` MUST load the WASM module by referencing the
-  Emscripten-generated `.js` glue file via a `<script src="...">` tag. Once the
-  module is ready (inside the `onRuntimeInitialized` callback), the JS MUST call
-  the exported Sun longitude function and print the result to the browser console
-  using `console.log`. The `.wasm` binary MUST remain a separate file; WASM MUST
-  NOT be inlined as a base64 data URI.
+  Emscripten-generated `.js` glue file via a `<script src="astro.js">` tag
+  declared after a `var Module = { onRuntimeInitialized: function() { … } }`
+  block. Inside `onRuntimeInitialized`, the JS MUST call
+  `bridge('sun_longitude', JSON.stringify({ tjd: 2451545.0 }))` using the
+  `bridge()` JS helper (Option B retry pattern; see `contracts/wasm-api-v1.md`)
+  and print the returned longitude to the browser console via `console.log`.
+  The `.wasm` binary MUST remain a separate file; WASM MUST NOT be inlined as
+  a base64 data URI.
 - **FR-006**: The main `index.html` MUST display the text "Work in Progress"
   visibly, regardless of whether the WASM module loads successfully.
 - **FR-007**: The build MUST be invocable via `./build.sh` at the repository root.

@@ -18,7 +18,7 @@ developer-facing verification milestone.
 
 **Language/Version**: Rust 1.88 (stable); C99 (swisseph sources)  
 **Emscripten**: 4.0.13 — `emcc` used as both C compiler and Rust linker  
-**Primary Dependencies**: `swisseph` C library (Git submodule, `vendor/swisseph/`); Rust `std` only (no external crates for this feature)  
+**Primary Dependencies**: `swisseph` C library (Git submodule, `vendor/swisseph/`); `serde_json` 1.x (`alloc` feature, no_std-compatible) for JSON parsing inside bridge  
 **Storage**: N/A — ephemeris data files preloaded into WASM virtual FS at build time  
 **Testing**: `cargo test` (native, for Rust unit tests); manual browser smoke test for WASM integration  
 **Target Platform**: WASM (`wasm32-unknown-emscripten`); static HTML served over HTTP  
@@ -71,7 +71,7 @@ astro-wasm/              # Rust crate — wasm32-unknown-emscripten target
 ├── Cargo.toml
 ├── build.rs             # Links libswe.a; sets LIBSWE_DIR search path
 └── src/
-    └── lib.rs           # pub extern "C" fn sun_longitude() -> f64
+    └── lib.rs           # pub extern "C" fn bridge(op_ptr, input_ptr, output_ptr, output_max_len) → i32
 
 web/                     # Static web assets
 ├── index.html           # "Work in Progress" page + WASM loader

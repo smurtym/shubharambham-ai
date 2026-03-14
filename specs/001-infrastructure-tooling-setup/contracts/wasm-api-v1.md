@@ -25,7 +25,7 @@ The JS caller MUST use the `onRuntimeInitialized` callback pattern:
 // MUST appear before <script src="astro.js">
 var Module = {
   onRuntimeInitialized: function () {
-    // safe to call Module._sun_longitude() here
+    // safe to call bridge(...) here
   }
 };
 ```
@@ -142,7 +142,7 @@ catalogue grows. Adding a new operation is a **MINOR** version change to this co
 ### `sun_longitude`
 
 Calculates the Sun's apparent ecliptic longitude (tropical, no ayanamsha) for a given
-Julian Day Number (TT), using Swiss Ephemeris file-based data.
+Julian Day Number in UTC, using Swiss Ephemeris file-based data (`swe_calc_ut`).
 
 #### Input payload
 
@@ -152,7 +152,7 @@ Julian Day Number (TT), using Swiss Ephemeris file-based data.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `tjd` | number | Julian Day Number in Terrestrial Time (TT) |
+| `tjd` | number | Julian Day Number in UTC (Universal Time) |
 
 #### Output payload (success)
 

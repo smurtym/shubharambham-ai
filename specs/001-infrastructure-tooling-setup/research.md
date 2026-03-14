@@ -276,11 +276,11 @@ All operation routing, calculation, serialization happens inside Rust
 
 ### Decision
 
-Declare a `Module` global object **before** loading the Emscripten-generated `.js` file. Set `Module.onRuntimeInitialized` as a callback. All calls to exported functions must happen inside this callback (or after it fires).
+Declare a `Module` global object **before** loading the Emscripten-generated `.js` file. Set `Module.onRuntimeInitialized` as a callback. All `bridge()` calls must happen inside this callback (or after it fires). No `ccall` or `cwrap` — we use `_malloc`/`_free` + `TextEncoder`/`TextDecoder` directly.
 
 ### Rationale
 
-Emscripten compiles WASM asynchronously. The `.js` glue file starts the download and instantiation of the `.wasm` file (and its `.data` preload bundle) when it is executed. `onRuntimeInitialized` fires exactly once, after all async init (including file preloading and WASM compilation) is complete. Calling `Module._sun_longitude()` before this fires will throw "function not yet available" or produce incorrect results.
+Emscripten compiles WASM asynchronously. `onRuntimeInitialized` fires exactly once, after WASM instantiation and all `--preload-file` data are loaded. Calling `Module._bridge()` before this fires will throw or misbehave. `ccall` and `cwrap` are not needed — our `bridge()` JS helper (see Q4) uses only `_malloc`, `_free`, and `HEAPU8`, which are always available.
 
 ### Minimal `index.html` pattern
 
@@ -289,35 +289,34 @@ Emscripten compiles WASM asynchronously. The `.js` glue file starts the download
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Shubharambham</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <p>Work in Progress</p>
 
   <script>
+    // bridge() helper — written once, never changes (see Q4 for full version)
+    const INITIAL_OUTPUT_SIZE = 4096;
+    function bridge(op, inputJson) { /* ... see Q4 ... */ }
+
     // 1. Declare Module BEFORE the script tag that loads the emcc output.
     var Module = {
-      // Capture stdout from C printf() calls
-      print: function(text) {
-        console.log('[wasm stdout]', text);
-      },
-      printErr: function(text) {
-        console.error('[wasm stderr]', text);
-      },
-      // 2. This callback fires once WASM + preloaded files are fully ready.
+      print:    function(t) { console.log('[wasm]', t); },
+      printErr:  function(t) { console.error('[wasm]', t); },
+      noExitRuntime: true,   // prevent runtime shutdown if main() returns
+      // 2. Fires once WASM + preloaded .data are fully ready.
       onRuntimeInitialized: function() {
-        console.log('WASM runtime ready');
-
-        // 3. Call exported Rust/C functions here.
-        // J2000.0 = 2451545.0 (Julian Day for 2000-01-01 12:00 TT)
-        var tjd = 2451545.0;
-        var lon = Module._sun_longitude(tjd);
-        console.log('Sun longitude (J2000): ' + lon.toFixed(6) + '°');
+        // 3. Verify pipeline: call bridge with sun_longitude op
+        // J2000.0 ≈ 2451545.0 (Julian Day for 2000-01-01 12:00 UTC)
+        const result = bridge('sun_longitude', JSON.stringify({ tjd: 2451545.0 }));
+        console.log('Sun longitude (J2000): ' + result.longitude.toFixed(6) + '°');
       }
     };
   </script>
 
-  <!-- 4. Load the emcc-generated JS glue AFTER the Module declaration. -->
+  <!-- 4. Load emcc-generated glue AFTER Module declaration -->
   <script src="astro.js"></script>
 </body>
 </html>
@@ -325,9 +324,9 @@ Emscripten compiles WASM asynchronously. The `.js` glue file starts the download
 
 ### Notes
 
-- If using `ccall` or `cwrap`: also add `-sEXPORTED_RUNTIME_METHODS=ccall,cwrap` and access via `Module.ccall(...)`.
-- `Module.noExitRuntime = true` should be set if there is no `main()` (or `main()` returns early), to prevent the runtime from shutting down after `main` completes.
-- The `.data` preload bundle is fetched relative to the `.js` glue file's URL. Keep them in the same directory or use `Module.locateFile` to redirect.
+- `noExitRuntime: true` is required when the Rust entry point is a library (no `main`), to prevent the Emscripten runtime from tearing down after `main` returns.
+- The `.data` preload bundle is fetched relative to `astro.js`. Keep all dist files in the same directory.
+- `Module.locateFile` can redirect `.wasm`/`.data` to a CDN or versioned path if needed in future — no change to `index.html` structure required.
 
 ---
 
@@ -422,7 +421,7 @@ echo "==> Build complete. Serve dist/ with: python3 -m http.server --directory d
 
 ### Decision
 
-Pass the string `"/ephe"` to `swe_set_ephe_path()`. This must be called before the first `swe_calc()` call.
+Pass the string `"/ephe"` to `swe_set_ephe_path()`. This must be called before the first `swe_calc_ut()` call.
 
 ### Rationale
 
