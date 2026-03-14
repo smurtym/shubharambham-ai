@@ -10,61 +10,54 @@
   <h1>Shubharambham</h1>
   <p>Work in Progress</p>
 
+  <form id="sun-form">
+    <label for="datetime">Date &amp; Time (UTC):</label>
+    <input type="datetime-local" id="datetime" value="2000-01-01T12:00">
+
+    <label for="lang">Language:</label>
+    <select id="lang">
+      <option value="en">English</option>
+      <option value="te">తెలుగు</option>
+    </select>
+
+    <button type="submit" id="submit">Calculate</button>
+  </form>
+
+  <div id="result"></div>
+
   <script>
-    // FR-008: Graceful fallback when WebAssembly is unavailable.
-    if (typeof WebAssembly === 'undefined') {
-      console.error('WebAssembly is not supported in this browser. Calculations are unavailable.');
-    }
+    document.getElementById('sun-form').addEventListener('submit', function (e) {
+      e.preventDefault();
 
-    // Bridge JS helper — Option B retry pattern (contracts/wasm-api-v1.md).
-    // JS owns and frees all three buffers inside a try/finally block.
-    var INITIAL_OUTPUT_SIZE = 4096;
+      var datetimeInput = document.getElementById('datetime').value;
+      var lang          = document.getElementById('lang').value;
+      var submitBtn     = document.getElementById('submit');
+      var resultEl      = document.getElementById('result');
 
-    function bridge(op, inputJson) {
-      var enc = new TextEncoder();
-      var opBytes    = enc.encode(op + '\0');
-      var inputBytes = enc.encode(inputJson + '\0');
+      // datetime-local yields YYYY-MM-DDTHH:MM — append :00Z for full UTC ISO 8601.
+      var isoUtc = datetimeInput + ':00Z';
 
-      var opPtr  = Module._malloc(opBytes.length);
-      var inPtr  = Module._malloc(inputBytes.length);
-      Module.HEAPU8.set(opBytes,    opPtr);
-      Module.HEAPU8.set(inputBytes, inPtr);
-
-      var outPtr  = Module._malloc(INITIAL_OUTPUT_SIZE);
-      var outSize = INITIAL_OUTPUT_SIZE;
+      submitBtn.disabled = true;
+      resultEl.textContent = '';
 
       try {
-        var written = Module._bridge(opPtr, inPtr, outPtr, outSize);
-
-        if (written > outSize) {
-          // Buffer too small — Rust returned required size; retry once.
-          Module._free(outPtr);
-          outPtr  = Module._malloc(written);
-          outSize = written;
-          written = Module._bridge(opPtr, inPtr, outPtr, outSize);
+        var result = getSunLongitude(isoUtc, lang);
+        if (result.error) {
+          resultEl.textContent = 'Error: ' + result.error;
+        } else {
+          resultEl.textContent = result.label + ' — ' + result.longitude.toFixed(2) + '°';
         }
-
-        if (written < 0) {
-          throw new Error('bridge error code: ' + written);
-        }
-
-        var bytes = Module.HEAPU8.subarray(outPtr, outPtr + written);
-        return JSON.parse(new TextDecoder().decode(bytes));
+      } catch (err) {
+        resultEl.textContent = 'Error: ' + err.message;
       } finally {
-        Module._free(opPtr);
-        Module._free(inPtr);
-        Module._free(outPtr);
+        submitBtn.disabled = false;
       }
-    }
-
-    // Module must be declared before <script src="astro.js"> loads.
-    var Module = {
-      onRuntimeInitialized: function () {
-        var result = bridge('sun_longitude', JSON.stringify({ tjd: 2451545.0 }));
-        console.log('Sun longitude: ' + result.longitude.toFixed(2));
-      }
-    };
+    });
   </script>
+
+  <script src="astro-glue.js"></script>
+  <script src="data.js"></script>
+  <script src="components.js"></script>
   <script src="astro.js"></script>
 </body>
 </html>
