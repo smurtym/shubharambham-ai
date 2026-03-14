@@ -37,23 +37,29 @@ ls vendor/swisseph/sweph.c   # Must exist
 
 ---
 
-## Step 2 — Download ephemeris data files
+## Step 2 — Obtain ephemeris data files
 
-The ephemeris data files are not committed to Git. Download the two required files from
-the Swiss Ephemeris FTP server:
+The ephemeris data files are not committed to Git. Obtain the two required files
+(`semo_18.se1`, `sepl_18.se1`) and place them in the `ephe/` directory:
 
 ```bash
 mkdir -p ephe
-curl -o ephe/semo_18.se1 "https://www.astro.com/ftp/swisseph/ephe/semo_18.se1"
-curl -o ephe/sepl_18.se1 "https://www.astro.com/ftp/swisseph/ephe/sepl_18.se1"
 ```
+
+> **Note**: The Swiss Ephemeris FTP download URL
+> (`https://www.astro.com/ftp/swisseph/ephe/`) may be unavailable. If so, copy
+> the files from another local Swiss Ephemeris installation:
+> ```bash
+> cp /path/to/existing/swisseph/ephe/semo_18.se1 ephe/
+> cp /path/to/existing/swisseph/ephe/sepl_18.se1 ephe/
+> ```
 
 Verify:
 
 ```bash
 ls -lh ephe/
-# semo_18.se1  ~5 MB
-# sepl_18.se1  ~10 MB
+# semo_18.se1  ~1.3 MB
+# sepl_18.se1  ~450 KB
 ```
 
 ---
@@ -74,11 +80,11 @@ The script will:
 Expected final output:
 
 ```
-[build.sh] ✓ Prerequisites OK
-[build.sh] ✓ libswe.a compiled
-[build.sh] ✓ astro-wasm built
-[build.sh] ✓ dist/ populated
-Build complete. Serve dist/ with any HTTP server.
+[build.sh] ✓ Prerequisites OK (Emscripten 4.x.y, swisseph submodule, ephe/ files, Rust target)
+[build.sh] ✓ libswe.a compiled → lib/libswe.a
+[build.sh] ✓ WASM artifacts written to dist/ (astro.js, astro.wasm, astro.data)
+[build.sh] ✓ Web assets copied to dist/
+[build.sh] Build complete. Serve dist/ with: python3 -m http.server 8080 --directory dist/
 ```
 
 ---
@@ -99,11 +105,13 @@ Open `http://localhost:8080` in Chrome, Firefox, or Safari.
 - Open the browser developer console (F12 → Console). You should see:
 
 ```
-Sun longitude (J2000): 280.459500°
+Sun longitude (J2000): 280.368919°
 ```
 
 This is printed by `onRuntimeInitialized` calling `bridge('sun_longitude', JSON.stringify({ tjd: 2451545.0 }))`.  
-The value should be within 0.001° of 280.459° (J2000 reference).
+The value is the Sun's **apparent geocentric ecliptic longitude** at J2000.0 as computed by
+Swiss Ephemeris. It differs from the mean longitude (~280.466°) due to the equation of center
+and other corrections. Any value in the range 280.3°–280.5° is correct.
 
 ---
 

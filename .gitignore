@@ -1,0 +1,23 @@
+# Ephemeris data files — download manually, never commit (large binaries)
+/ephe/
+
+# Build outputs
+/dist/
+/lib/
+/build/
+
+# Rust / Cargo
+/astro-wasm/target/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.idea/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.*

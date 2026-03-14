@@ -1,0 +1,13 @@
+[target.wasm32-unknown-emscripten]
+linker = "emcc"
+# Pass emcc linker flags through rustc's -C link-arg
+# NOTE: Do NOT set RUSTFLAGS env var simultaneously — env var silently wins over this config.
+rustflags = [
+  "-C", "link-arg=--no-entry",
+  "-C", "link-arg=-sENVIRONMENT=web",
+  "-C", "link-arg=-sEXPORTED_FUNCTIONS=_bridge,_malloc,_free",
+  "-C", "link-arg=-sEXPORTED_RUNTIME_METHODS=HEAPU8",
+  "-C", "link-arg=-sALLOW_MEMORY_GROWTH=1",
+  "-C", "link-arg=-sFORCE_FILESYSTEM=1",
+  # --preload-file is emitted by build.rs with an absolute path to ephe/
+]
