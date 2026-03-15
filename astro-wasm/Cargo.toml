@@ -9,6 +9,8 @@ crate-type = ["cdylib"]
 [dependencies]
 serde       = { version = "1", default-features = false, features = ["derive", "alloc"] }
 serde_json  = { version = "1", default-features = false, features = ["alloc"] }
+chrono      = { version = "0.4", default-features = false, features = ["alloc"] }
+chrono-tz   = { version = "0.9", default-features = false }
 
 [build-dependencies]
 cc = "1"

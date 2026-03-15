@@ -81,7 +81,11 @@ pub extern "C" fn bridge(
                 Err(e) => write_error(&e, -3, output_ptr, output_max_len),
             }
         },
-        "list_cities"   => dispatch_list_cities(op, input, output_ptr, output_max_len),
+        "list_cities"          => dispatch_list_cities(op, input, output_ptr, output_max_len),
+        "horoscope_positions"  => {
+            let json = engines::horoscope::execute(input);
+            write_json(&json, output_ptr, output_max_len)
+        },
         _ => write_error(&format!("unknown operation: {op}"), -1, output_ptr, output_max_len),
     }
 }
