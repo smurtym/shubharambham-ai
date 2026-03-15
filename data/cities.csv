@@ -1,0 +1,50 @@
+# City data — edit this file to add/remove cities or translations.
+# This file is the single source of truth for all city data.
+# The Rust source file astro-wasm/src/data/cities.rs is auto-generated
+# from this file at build time by build.rs — do NOT edit cities.rs directly.
+#
+# Columns (all required, no commas allowed inside field values):
+#   city_id        — 16-bit quadkey: tile_x*128 + tile_y (zoom-7 Web Mercator)
+#   canonical_name — City name in English (used for logging, tests, canonicalName field)
+#   timezone       — IANA timezone (e.g. Asia/Kolkata, America/New_York)
+#   lang           — BCP-47 language code (en / te / hi / ...)
+#   city_name      — City name in this language
+#   region1        — State / province in this language
+#   region2        — Country in this language
+#   region1_order  — Sort key within a country (integer, lower = listed first)
+#   region2_order  — Sort key between countries (integer, lower = listed first)
+#
+# To ADD A CITY: append one row per language translation.
+#   All rows with the same city_id become one CityRecord.
+#   city_id is computed as: tile_x * 128 + tile_y
+#   Use https://www.maptiler.com/google-maps-coordinates-tile-bounds-projection/
+#   to look up tile_x / tile_y at zoom level 7 for the city's coordinates.
+#
+# To ADD A LANGUAGE to an existing city: add a new row with the same city_id
+#   and the new lang code. The city will automatically appear in that language's
+#   list_cities response after the next build.
+#
+# To REMOVE A CITY or translation: delete its row(s). The next build removes it.
+
+city_id,canonical_name,timezone,lang,city_name,region1,region2,region1_order,region2_order
+
+# ---------------------------------------------------------------------------
+# India
+# ---------------------------------------------------------------------------
+
+11701,Delhi,Asia/Kolkata,en,Delhi,Delhi,India,1,1
+
+11705,Hyderabad,Asia/Kolkata,te,హైదరాబాద్,తెలంగాణ,భారతదేశం,1,1
+11705,Hyderabad,Asia/Kolkata,en,Hyderabad,Telangana,India,2,1
+
+11833,Eluru,Asia/Kolkata,te,ఏలూరు,ఆంధ్రప్రదేశ్,భారతదేశం,2,1
+11833,Eluru,Asia/Kolkata,en,Eluru,Andhra Pradesh,India,3,1
+
+11834,Vijayawada,Asia/Kolkata,te,విజయవాడ,ఆంధ్రప్రదేశ్,భారతదేశం,2,1
+11834,Vijayawada,Asia/Kolkata,en,Vijayawada,Andhra Pradesh,India,3,1
+
+# ---------------------------------------------------------------------------
+# USA
+# ---------------------------------------------------------------------------
+
+4784,New York,America/New_York,en,New York,New York,United States,1,2

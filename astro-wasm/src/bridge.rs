@@ -1,5 +1,6 @@
 use crate::engines;
 use crate::utils;
+use crate::data;
 use std::ffi::CStr;
 use std::os::raw::c_char;
 
@@ -11,6 +12,12 @@ use std::os::raw::c_char;
 struct SunRequest {
     operation: String,
     datetime:  String,
+    lang:      String,
+}
+
+#[derive(serde::Deserialize)]
+struct CitiesRequest {
+    operation: String,
     lang:      String,
 }
 
@@ -83,6 +90,7 @@ pub extern "C" fn bridge(
                 Err(e) => write_error(&e, -3, output_ptr, output_max_len),
             }
         },
+        "list_cities"   => dispatch_list_cities(op, input, output_ptr, output_max_len),
         _ => write_error(&format!("unknown operation: {op}"), -1, output_ptr, output_max_len),
     }
 }
@@ -124,6 +132,28 @@ fn dispatch_sun_longitude(
     // Serialize success response.
     let label   = result.label.replace('"', "\\\"");
     let json    = format!("{{\"label\":\"{label}\",\"longitude\":{}}}", result.longitude);
+    write_json(&json, output_ptr, output_max_len)
+}
+
+fn dispatch_list_cities(
+    op:             &str,
+    input:          &str,
+    output_ptr:     *mut c_char,
+    output_max_len: i32,
+) -> i32 {
+    let req: CitiesRequest = match serde_json::from_str(input) {
+        Ok(r)  => r,
+        Err(e) => return write_error(&format!("JSON parse error: {e}"), -2, output_ptr, output_max_len),
+    };
+    if req.operation != op {
+        return write_error(
+            &format!("operation mismatch: op_ptr={op} body={}", req.operation),
+            -2,
+            output_ptr,
+            output_max_len,
+        );
+    }
+    let json = data::list_cities(&req.lang);
     write_json(&json, output_ptr, output_max_len)
 }
 
@@ -186,6 +216,96 @@ mod tests {
             (longitude - 280.37).abs() < 0.5,
             "Sun longitude {longitude} not within 0.5° of 280.37°"
         );
+    }
+
+    // -----------------------------------------------------------------------
+    // T012 — US1 bridge integration test
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn test_bridge_list_cities_en() {
+        let input = b"{\"operation\":\"list_cities\",\"lang\":\"en\"}\0";
+        let (ret, output) = call_bridge(b"list_cities\0", input);
+        assert!(ret > 0, "bridge returned error code: {ret}");
+        let json: serde_json::Value = serde_json::from_slice(&output[..ret as usize])
+            .expect("output is valid JSON");
+        let cities = json["cities"].as_array().expect("cities array present");
+        // Derive expected count from CITIES so adding en-translated cities
+        // requires no test edits.
+        let expected = crate::data::cities::CITIES.iter()
+            .filter(|r| r.translations.iter().any(|(l, _)| *l == "en"))
+            .count();
+        assert_eq!(cities.len(), expected,
+            "en response has {} cities but {} have en translations", cities.len(), expected);
+    }
+
+    // -----------------------------------------------------------------------
+    // T014 — US2 bridge integration test
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn test_bridge_list_cities_te_filters() {
+        let input = b"{\"operation\":\"list_cities\",\"lang\":\"te\"}\0";
+        let (ret, output) = call_bridge(b"list_cities\0", input);
+        assert!(ret > 0, "bridge returned error code: {ret}");
+        let json: serde_json::Value = serde_json::from_slice(&output[..ret as usize])
+            .expect("output is valid JSON");
+        let cities = json["cities"].as_array().expect("cities array present");
+        let canonical_names: std::collections::HashSet<&str> = cities.iter()
+            .map(|c| c["canonicalName"].as_str().unwrap())
+            .collect();
+        // Derive presence/absence expectations from CITIES rather than hardcoding
+        // city names — adding a te translation to any city keeps the test correct.
+        for rec in crate::data::cities::CITIES {
+            let has_te = rec.translations.iter().any(|(l, _)| *l == "te");
+            if has_te {
+                assert!(canonical_names.contains(rec.canonical_name),
+                    "'{}' has a te translation but is absent from the te bridge response",
+                    rec.canonical_name);
+            } else {
+                assert!(!canonical_names.contains(rec.canonical_name),
+                    "'{}' has no te translation but appears in the te bridge response",
+                    rec.canonical_name);
+            }
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // T016 — US3 bridge integration test
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn test_bridge_canonical_name_invariant() {
+        // Property: canonicalName is always ASCII (English) for every response
+        // language — checking is_ascii() scales to any number of cities.
+        for lang in &[b"{\"operation\":\"list_cities\",\"lang\":\"te\"}\0".as_ref(),
+                      b"{\"operation\":\"list_cities\",\"lang\":\"en\"}\0".as_ref()] {
+            let (ret, output) = call_bridge(b"list_cities\0", lang);
+            assert!(ret > 0);
+            let json: serde_json::Value = serde_json::from_slice(&output[..ret as usize]).unwrap();
+            for city in json["cities"].as_array().unwrap() {
+                let name = city["canonicalName"].as_str().unwrap();
+                assert!(name.is_ascii(),
+                    "canonicalName '{name}' must be ASCII (English) regardless of request language");
+            }
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // T021 — FR-012: missing `lang` field returns -2 + error JSON
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn test_bridge_list_cities_missing_lang() {
+        // JSON is valid but `lang` field is absent — CitiesRequest deserialisation fails.
+        let input = b"{\"operation\":\"list_cities\"}\0";
+        let (ret, output) = call_bridge(b"list_cities\0", input);
+        assert_eq!(ret, -2, "expected -2 for missing lang field");
+        let trimmed: Vec<u8> = output.iter().copied().take_while(|&b| b != 0).collect();
+        let json: serde_json::Value = serde_json::from_slice(&trimmed)
+            .expect("error response is valid JSON");
+        assert!(json["error"].as_str().is_some(), "expected 'error' key in response");
+        assert!(json["cities"].is_null(), "must not have 'cities' key on error");
     }
 
     /// Same test with Telugu locale — label should be సూర్యుడు (SC-001 + SC-002 preview).
