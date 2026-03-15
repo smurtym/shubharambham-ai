@@ -10,9 +10,12 @@
   <h1>Shubharambham</h1>
   <p>Work in Progress</p>
 
-  <form id="sun-form">
-    <label for="datetime">Date &amp; Time (UTC):</label>
-    <input type="datetime-local" id="datetime" value="2000-01-01T12:00">
+  <form id="horoscope-form">
+    <label for="city-id">City ID:</label>
+    <input type="number" id="city-id" value="11705" min="0">
+
+    <label for="local-time">Local Date &amp; Time:</label>
+    <input type="datetime-local" id="local-time" value="1961-10-28T07:30">
 
     <label for="lang">Language:</label>
     <select id="lang">
@@ -23,30 +26,24 @@
     <button type="submit" id="submit">Calculate</button>
   </form>
 
-  <div id="result"></div>
+  <pre id="horoscope-result"></pre>
 
   <script>
-    document.getElementById('sun-form').addEventListener('submit', function (e) {
+    document.getElementById('horoscope-form').addEventListener('submit', function (e) {
       e.preventDefault();
 
-      var datetimeInput = document.getElementById('datetime').value;
-      var lang          = document.getElementById('lang').value;
-      var submitBtn     = document.getElementById('submit');
-      var resultEl      = document.getElementById('result');
-
-      // datetime-local yields YYYY-MM-DDTHH:MM — append :00Z for full UTC ISO 8601.
-      var isoUtc = datetimeInput + ':00Z';
+      var cityId    = parseInt(document.getElementById('city-id').value, 10);
+      var localTime = document.getElementById('local-time').value + ':00';
+      var lang      = document.getElementById('lang').value;
+      var submitBtn = document.getElementById('submit');
+      var resultEl  = document.getElementById('horoscope-result');
 
       submitBtn.disabled = true;
       resultEl.textContent = '';
 
       try {
-        var result = getSunLongitude(isoUtc, lang);
-        if (result.error) {
-          resultEl.textContent = 'Error: ' + result.error;
-        } else {
-          resultEl.textContent = result.label + ' — ' + result.longitude.toFixed(2) + '°';
-        }
+        var result = getHoroscopePositions(cityId, localTime, lang);
+        resultEl.textContent = JSON.stringify(result, null, 2);
       } catch (err) {
         resultEl.textContent = 'Error: ' + err.message;
       } finally {

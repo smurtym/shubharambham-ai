@@ -1,19 +1,11 @@
 use crate::engines;
-use crate::utils;
 use crate::data;
 use std::ffi::CStr;
 use std::os::raw::c_char;
 
 // ---------------------------------------------------------------------------
-// wasm-api-v2 request shape
+// Request shapes
 // ---------------------------------------------------------------------------
-
-#[derive(serde::Deserialize)]
-struct SunRequest {
-    operation: String,
-    datetime:  String,
-    lang:      String,
-}
 
 #[derive(serde::Deserialize)]
 struct CitiesRequest {
@@ -83,7 +75,6 @@ pub extern "C" fn bridge(
     };
 
     match op {
-        "sun_longitude" => dispatch_sun_longitude(op, input, output_ptr, output_max_len),
         "stub_op"       => {
             match engines::stub::handle_stub("") {
                 Ok(r)  => { let j = format!("{{\"value\":\"{}\"}}", r.value); write_json(&j, output_ptr, output_max_len) }
@@ -93,46 +84,6 @@ pub extern "C" fn bridge(
         "list_cities"   => dispatch_list_cities(op, input, output_ptr, output_max_len),
         _ => write_error(&format!("unknown operation: {op}"), -1, output_ptr, output_max_len),
     }
-}
-
-fn dispatch_sun_longitude(
-    op:             &str,
-    input:          &str,
-    output_ptr:     *mut c_char,
-    output_max_len: i32,
-) -> i32 {
-    // Parse wasm-api-v2 JSON request.
-    let req: SunRequest = match serde_json::from_str(input) {
-        Ok(r)  => r,
-        Err(e) => return write_error(&format!("JSON parse error: {e}"), -2, output_ptr, output_max_len),
-    };
-
-    // op_ptr must match the JSON "operation" field (dispatch rule).
-    if req.operation != op {
-        return write_error(
-            &format!("operation mismatch: op_ptr={op} body={}", req.operation),
-            -2,
-            output_ptr,
-            output_max_len,
-        );
-    }
-
-    // Convert ISO datetime → Julian Day.
-    let jd = match utils::iso_to_jd(&req.datetime) {
-        Ok(jd) => jd,
-        Err(e) => return write_error(&format!("datetime error: {e}"), -2, output_ptr, output_max_len),
-    };
-
-    // Call engine.
-    let result = match engines::sun::handle_sun_longitude(jd, &req.lang) {
-        Ok(r)  => r,
-        Err(e) => return write_error(&format!("calculation error: {e}"), -3, output_ptr, output_max_len),
-    };
-
-    // Serialize success response.
-    let label   = result.label.replace('"', "\\\"");
-    let json    = format!("{{\"label\":\"{label}\",\"longitude\":{}}}", result.longitude);
-    write_json(&json, output_ptr, output_max_len)
 }
 
 fn dispatch_list_cities(
@@ -188,34 +139,15 @@ mod tests {
 
     #[test]
     fn test_bridge_malformed_json_returns_minus2() {
-        let (ret, _) = call_bridge(b"sun_longitude\0", b"not-json\0");
+        let (ret, _) = call_bridge(b"list_cities\0", b"not-json\0");
         assert_eq!(ret, -2);
     }
 
     #[test]
     fn test_bridge_operation_mismatch_returns_minus2() {
-        let input = b"{\"operation\":\"other_op\",\"datetime\":\"2000-01-01T12:00:00Z\",\"lang\":\"en\"}\0";
-        let (ret, _) = call_bridge(b"sun_longitude\0", input);
+        let input = b"{\"operation\":\"other_op\",\"lang\":\"en\"}\0";
+        let (ret, _) = call_bridge(b"list_cities\0", input);
         assert_eq!(ret, -2);
-    }
-
-    /// Sun longitude at J2000.0 via wasm-api-v2 should be ≈ 280.37° (SC-001).
-    #[test]
-    fn test_sun_longitude_j2000_via_bridge() {
-        let ephe_path = concat!(env!("CARGO_MANIFEST_DIR"), "/../ephe\0");
-        unsafe { crate::swe_wrappers::swe_set_ephe_path(ephe_path.as_ptr() as *const c_char) };
-
-        let input = b"{\"operation\":\"sun_longitude\",\"datetime\":\"2000-01-01T12:00:00Z\",\"lang\":\"en\"}\0";
-        let (ret, output) = call_bridge(b"sun_longitude\0", input);
-        assert!(ret > 0, "bridge returned error: {ret}");
-        let json: serde_json::Value = serde_json::from_slice(&output[..ret as usize])
-            .expect("output is valid JSON");
-        let longitude = json["longitude"].as_f64().expect("longitude is f64");
-        assert_eq!(json["label"], "Sun");
-        assert!(
-            (longitude - 280.37).abs() < 0.5,
-            "Sun longitude {longitude} not within 0.5° of 280.37°"
-        );
     }
 
     // -----------------------------------------------------------------------
@@ -308,17 +240,4 @@ mod tests {
         assert!(json["cities"].is_null(), "must not have 'cities' key on error");
     }
 
-    /// Same test with Telugu locale — label should be సూర్యుడు (SC-001 + SC-002 preview).
-    #[test]
-    fn test_sun_longitude_j2000_te_label() {
-        let ephe_path = concat!(env!("CARGO_MANIFEST_DIR"), "/../ephe\0");
-        unsafe { crate::swe_wrappers::swe_set_ephe_path(ephe_path.as_ptr() as *const c_char) };
-
-        let input = b"{\"operation\":\"sun_longitude\",\"datetime\":\"2000-01-01T12:00:00Z\",\"lang\":\"te\"}\0";
-        let (ret, output) = call_bridge(b"sun_longitude\0", input);
-        assert!(ret > 0, "bridge returned error: {ret}");
-        let json: serde_json::Value = serde_json::from_slice(&output[..ret as usize])
-            .expect("output is valid JSON");
-        assert_eq!(json["label"], "సూర్యుడు");
-    }
 }

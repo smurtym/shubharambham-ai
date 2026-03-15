@@ -7,6 +7,7 @@ const plainScripts = ['astro-glue.js', 'data.js', 'components.js'];
 
 export default defineConfig({
   root: 'web',
+  base: './',
   publicDir: '../public',
   build: {
     outDir: '../dist',
