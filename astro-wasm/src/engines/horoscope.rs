@@ -52,6 +52,7 @@ pub struct HoroscopeRequest {
 pub struct PlanetaryPosition {
     pub name:                   String,
     pub abbrev:                 String,
+    #[serde(serialize_with = "crate::utils::serialize_round5")]
     pub longitude:              f64,
     pub zodiac_number:          u8,
     pub zodiac_sign:            String,
@@ -76,7 +77,9 @@ pub struct HoroscopeResponse {
     pub city_name: String,
     pub region1:   String,
     pub region2:   String,
+    #[serde(serialize_with = "crate::utils::serialize_round3")]
     pub lat:       f64,
+    #[serde(serialize_with = "crate::utils::serialize_round3")]
     pub lng:       f64,
     pub timezone:  String,
     pub planets:   BTreeMap<String, PlanetaryPosition>,

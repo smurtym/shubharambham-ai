@@ -67,7 +67,9 @@ pub struct CityResponse {
     pub city_name:      String,
     pub region1:        String,
     pub region2:        String,
+    #[serde(serialize_with = "crate::utils::serialize_round3")]
     pub lat:            f64,
+    #[serde(serialize_with = "crate::utils::serialize_round3")]
     pub lng:            f64,
     #[serde(skip)]
     pub region1_order:  u16,

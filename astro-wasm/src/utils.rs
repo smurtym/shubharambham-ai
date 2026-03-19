@@ -91,6 +91,16 @@ pub fn normalize_degrees(deg: f64) -> f64 {
     ((deg % 360.0) + 360.0) % 360.0
 }
 
+/// Serde serializer: round an `f64` to 3 decimal places.
+pub fn serialize_round3<S: serde::Serializer>(val: &f64, s: S) -> Result<S::Ok, S::Error> {
+    s.serialize_f64((val * 1_000.0).round() / 1_000.0)
+}
+
+/// Serde serializer: round an `f64` to 5 decimal places.
+pub fn serialize_round5<S: serde::Serializer>(val: &f64, s: S) -> Result<S::Ok, S::Error> {
+    s.serialize_f64((val * 100_000.0).round() / 100_000.0)
+}
+
 // ---------------------------------------------------------------------------
 // T005 — Local time + IANA timezone → Julian Day Number (UT)
 // ---------------------------------------------------------------------------
