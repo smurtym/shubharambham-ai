@@ -27,7 +27,7 @@ function listCities(lang) {
 /**
  * Compute Vedic horoscope positions for a given city, local time, and language.
  *
- * @param {number} cityId     - 16-bit city identifier
+ * @param {number} cityId     - 32-bit city identifier
  * @param {string} localTime  - Local datetime in "YYYY-MM-DDTHH:MM:SS" format
  * @param {string} lang       - Language code, e.g. "en" or "te"
  * @returns {Object} Full HoroscopeResponse including planets keyed by canonical name

@@ -41,7 +41,7 @@ const SIGN_KEYS: [&str; 12] = [
 #[serde(rename_all = "camelCase")]
 pub struct HoroscopeRequest {
     pub operation:  String,
-    pub city_id:    u16,
+    pub city_id:    u32,
     pub local_time: String,
     pub lang:       String,
 }
@@ -72,7 +72,7 @@ pub struct PlanetaryPosition {
 #[serde(rename_all = "camelCase")]
 pub struct HoroscopeResponse {
     pub lang:      String,
-    pub city_id:   u16,
+    pub city_id:   u32,
     pub city_name: String,
     pub region1:   String,
     pub region2:   String,

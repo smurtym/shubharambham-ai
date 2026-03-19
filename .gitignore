@@ -8,6 +8,7 @@
 
 # Rust / Cargo
 /astro-wasm/target/
+/ephe-test/target/
 
 # OS
 .DS_Store

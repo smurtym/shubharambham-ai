@@ -14,7 +14,9 @@ pub const SE_JUPITER:      i32 = 5;
 pub const SE_SATURN:       i32 = 6;
 pub const SE_TRUE_NODE:    i32 = 11;
 pub const SEFLG_SWIEPH:    i32 = 2;     // use Swiss Ephemeris file-based data
+pub const SEFLG_TRUEPOS:   i32 = 16;    // true/geometric position, not apparent
 pub const SEFLG_SPEED:     i32 = 256;   // return speed
+pub const SEFLG_NONUT:     i32 = 64;    // no nutation
 pub const SEFLG_SIDEREAL:  i32 = 65536; // sidereal coordinates
 pub const SE_SIDM_TRUE_CITRA: i32 = 27; // True Chitrapaksha ayanamsa
 
@@ -54,25 +56,24 @@ extern "C" {
 /// No ayanamsha is applied — see contracts/wasm-api-v2.md §Coordinate System.
 pub fn calc_sun_longitude(jd: f64) -> Result<f64, String> {
     let mut xx = [0.0_f64; 6];
-    let mut serr = [0_u8; 256];
-    let ret = unsafe {
-        swe_calc_ut(
+    let mut serr = [0_u8 as c_char; 256];
+    let iflag = SEFLG_SWIEPH | SEFLG_TRUEPOS | SEFLG_SPEED | SEFLG_NONUT;
+    let (ret, msg) = unsafe {
+        let r = swe_calc_ut(
             jd,
             SE_SUN,
-            SEFLG_SWIEPH | SEFLG_SPEED,
+            iflag,
             xx.as_mut_ptr(),
-            serr.as_mut_ptr() as *mut c_char,
-        )
+            serr.as_mut_ptr(),
+        );
+        let m = CStr::from_ptr(serr.as_mut_ptr()).to_string_lossy().into_owned();
+        (r, m)
     };
-    if ret < 0 {
-        let msg = CStr::from_bytes_until_nul(&serr)
-            .map(|s| s.to_string_lossy().into_owned())
-            .unwrap_or_else(|_| "swe_calc_ut error".to_string());
+    if ret < 0 || (ret & SEFLG_SWIEPH) == 0 {
         return Err(msg);
     }
     Ok(xx[0]) // ecliptic longitude in decimal degrees
 }
-
 /// Compute the sidereal ecliptic longitude of a planet for a given Julian Day.
 ///
 /// Uses `SEFLG_SIDEREAL | SEFLG_SPEED`. Caller MUST call `swe_set_sid_mode`
@@ -80,25 +81,28 @@ pub fn calc_sun_longitude(jd: f64) -> Result<f64, String> {
 /// Returns the sidereal longitude in [0, 360).
 pub fn calc_planet(jd: f64, body: i32) -> Result<f64, String> {
     let mut xx = [0.0_f64; 6];
-    let mut serr = [0_u8; 256];
-    let ret = unsafe {
-        swe_calc_ut(
+    let mut serr = [0_u8 as c_char; 256];
+    let iflag = SEFLG_SIDEREAL | SEFLG_TRUEPOS | SEFLG_SPEED | SEFLG_NONUT;
+    let (ret, msg) = unsafe {
+        let r = swe_calc_ut(
             jd,
             body as c_int,
-            SEFLG_SIDEREAL | SEFLG_SPEED,
+            iflag,
             xx.as_mut_ptr(),
-            serr.as_mut_ptr() as *mut c_char,
-        )
+            serr.as_mut_ptr(),
+        );
+        let m = CStr::from_ptr(serr.as_mut_ptr()).to_string_lossy().into_owned();
+        (r, m)
     };
-    if ret < 0 {
-        let msg = CStr::from_bytes_until_nul(&serr)
-            .map(|s| s.to_string_lossy().into_owned())
-            .unwrap_or_else(|_| "swe_calc_ut error".to_string());
+    // print warning even if ret >= 0, since Swiss Ephemeris may return warnings in serr
+    if !msg.is_empty() {
+        println!("swe_calc_ut warning: {msg}");
+    }
+    if ret < 0 || (ret & SEFLG_SIDEREAL) == 0 || (ret & SEFLG_SWIEPH) == 0 {
         return Err(msg);
     }
     Ok(xx[0])
 }
-
 /// Compute the sidereal Ascendant degree using the Whole Sign house system.
 ///
 /// Caller MUST call `swe_set_sid_mode(SE_SIDM_TRUE_CITRA, 0.0, 0.0)` before
@@ -112,7 +116,7 @@ pub fn calc_ascendant(jd: f64, lat: f64, lon: f64) -> Result<f64, String> {
             SEFLG_SIDEREAL,
             lat,
             lon,
-            b'W' as c_int,
+            b'A' as c_int,
             cusps.as_mut_ptr(),
             ascmc.as_mut_ptr(),
         )

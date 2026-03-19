@@ -34,8 +34,8 @@ city_id,canonical_name,timezone,lang,city_name,region1,region2,region1_order,reg
 
 11701,Delhi,Asia/Kolkata,en,Delhi,Delhi,India,1,1
 
-11705,Hyderabad,Asia/Kolkata,te,హైదరాబాద్,తెలంగాణ,భారతదేశం,1,1
-11705,Hyderabad,Asia/Kolkata,en,Hyderabad,Telangana,India,2,1
+466083478,Hyderabad,Asia/Kolkata,te,హైదరాబాద్,తెలంగాణ,భారతదేశం,1,1
+466083478,Hyderabad,Asia/Kolkata,en,Hyderabad,Telangana,India,2,1
 
 11833,Eluru,Asia/Kolkata,te,ఏలూరు,ఆంధ్రప్రదేశ్,భారతదేశం,2,1
 11833,Eluru,Asia/Kolkata,en,Eluru,Andhra Pradesh,India,3,1

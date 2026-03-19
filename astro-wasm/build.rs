@@ -77,7 +77,7 @@ fn generate_cities() {
         .unwrap_or_else(|e| panic!("cannot read {}: {e}", csv_path.display()));
 
     struct Row {
-        city_id: u16,
+        city_id: u32,
         canonical: String,
         timezone: String,
         lang: String,
@@ -111,8 +111,17 @@ fn generate_cities() {
                 )
             })
         };
+        let parse_u32 = |s: &str, field: &str| -> u32 {
+            s.trim().parse::<u32>().unwrap_or_else(|_| {
+                panic!(
+                    "cities.csv line {}: '{}' is not a valid u32 for field '{field}'",
+                    lineno + 1,
+                    s.trim()
+                )
+            })
+        };
         rows.push(Row {
-            city_id:       parse_u16(cols[0], "city_id"),
+            city_id:       parse_u32(cols[0], "city_id"),
             canonical:     cols[1].trim().to_string(),
             timezone:      cols[2].trim().to_string(),
             lang:          cols[3].trim().to_string(),
@@ -125,8 +134,8 @@ fn generate_cities() {
     }
 
     // Group translations by city_id, preserving first-occurrence insertion order.
-    let mut city_order: Vec<u16> = Vec::new();
-    let mut city_map: std::collections::HashMap<u16, (String, String, Vec<Row>)> =
+    let mut city_order: Vec<u32> = Vec::new();
+    let mut city_map: std::collections::HashMap<u32, (String, String, Vec<Row>)> =
         std::collections::HashMap::new();
     for row in rows {
         let id = row.city_id;
@@ -142,7 +151,7 @@ fn generate_cities() {
     for id in &city_order {
         let (canonical, timezone, translations) = city_map.get(id).unwrap();
         src.push_str(&format!(
-            "    CityRecord {{\n        city_id: {id}u16,\n        canonical_name: \"{}\",\n        timezone: \"{}\",\n        translations: &[\n",
+            "    CityRecord {{\n        city_id: {id}u32,\n        canonical_name: \"{}\",\n        timezone: \"{}\",\n        translations: &[\n",
             escape_str(canonical),
             escape_str(timezone)
         ));

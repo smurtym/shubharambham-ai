@@ -191,26 +191,32 @@ pub fn decompose_longitude(lon: f64) -> (u8, u8, u8, u8, u8, u8) {
 // ---------------------------------------------------------------------------
 
 /// Compute the Navamsa (D9) zodiac sign number (1–12, Aries = 1) for a given
-/// sidereal longitude, using the standard Vedic Chara/Sthira/Ubhaya method.
+/// sidereal longitude.
 ///
-/// Each zodiac sign is divided into 9 navamsas of 3°20' each.
-/// The starting navamsa sign depends on the sign's classification:
-/// - Chara  (Movable — Aries, Cancer, Libra, Capricorn):  start at Aries (0)
-/// - Sthira (Fixed   — Taurus, Leo, Scorpio, Aquarius):   start at Capricorn (9)
-/// - Ubhaya (Dual    — Gemini, Virgo, Sagittarius, Pisces): start at Cancer (3)
+/// Divides 0–360° into 108 equal parts of 3°20' (360/108) each.
+/// The navamsa sign cycles through 1–12 repeatedly:
+///   navamsa = (floor(longitude / (360/108)) % 12) + 1
 pub fn navamsa_sign(longitude: f64) -> u8 {
     let lon       = normalize_degrees(longitude);
-    let sign_idx  = (lon / 30.0).floor() as u8;          // 0-based (0 = Aries)
-    let nav_idx   = ((lon % 30.0) / (30.0 / 9.0)).floor() as u8; // 0–8
-
-    let start: u8 = match sign_idx % 3 {
-        0 => 0,  // Chara  → Aries
-        1 => 9,  // Sthira → Capricorn
-        _ => 3,  // Ubhaya → Cancer
-    };
-
-    ((start + nav_idx) % 12) + 1
+    let part_size = 360.0 / 108.0;              // 3.333... degrees per part
+    let part      = (lon / part_size).floor() as u32;
+    ((part % 12) + 1) as u8
 }
+
+// Old Chara/Sthira/Ubhaya implementation (kept for reference):
+// pub fn navamsa_sign(longitude: f64) -> u8 {
+//     let lon       = normalize_degrees(longitude);
+//     let sign_idx  = (lon / 30.0).floor() as u8;           // 0-based (0 = Aries)
+//     let nav_idx   = ((lon % 30.0) / (30.0 / 9.0)).floor() as u8; // 0–8
+//
+//     let start: u8 = match sign_idx % 3 {
+//         0 => 0,  // Chara  → Aries
+//         1 => 9,  // Sthira → Capricorn
+//         _ => 3,  // Ubhaya → Cancer
+//     };
+//
+//     ((start + nav_idx) % 12) + 1
+// }
 
 // ---------------------------------------------------------------------------
 // Unit tests
@@ -297,34 +303,63 @@ mod tests {
         assert_eq!(s, 56);   // 0.94 × 60 = 56.4 → 56
     }
 
-    // T007 tests
+    // T007 tests — 108-part linear navamsa: (floor(lon / (360/108)) % 12) + 1
     #[test]
-    fn test_navamsa_aries_first() {
-        // Aries 0°: Chara → start Aries (1), navamsa 0 → Aries = 1
+    fn test_navamsa_start() {
+        // 0°: part 0 → (0 % 12) + 1 = 1 (Aries)
         assert_eq!(navamsa_sign(0.0), 1);
     }
 
     #[test]
-    fn test_navamsa_taurus_first() {
-        // Taurus 0° = 30°: Sthira → start Capricorn (10, idx=9), navamsa 0 = 10
-        assert_eq!(navamsa_sign(30.0), 10);
+    fn test_navamsa_fourth_part() {
+        // 10°: floor(10 / 3.333) = 3 → (3 % 12) + 1 = 4
+        assert_eq!(navamsa_sign(10.0), 4);
     }
 
     #[test]
-    fn test_navamsa_gemini_first() {
-        // Gemini 0° = 60°: Ubhaya → start Cancer (4, idx=3), navamsa 0 = 4
-        assert_eq!(navamsa_sign(60.0), 4);
+    fn test_navamsa_cycles_at_40_degrees() {
+        // 40°: part 12 → (12 % 12) + 1 = 1 (wraps back to Aries)
+        assert_eq!(navamsa_sign(40.0), 1);
     }
 
     #[test]
-    fn test_navamsa_capricorn_first() {
-        // Capricorn 0° = 270°: Chara → start Aries (1), navamsa 0 = 1
-        assert_eq!(navamsa_sign(270.0), 1);
+    fn test_navamsa_60_degrees() {
+        // 60°: floor(60 / 3.333) = 18 → (18 % 12) + 1 = 7
+        assert_eq!(navamsa_sign(60.0), 7);
     }
 
     #[test]
-    fn test_navamsa_second_navamsa_taurus() {
-        // Taurus 3°21' = 30° + 3.35° — navamsa idx = 1 → Aquarius (10+1=11)
-        assert_eq!(navamsa_sign(33.35), 11);
+    fn test_navamsa_wraps_at_360() {
+        // 359.99°: floor(359.99 / 3.333) = 107 → (107 % 12) + 1 = 12
+        assert_eq!(navamsa_sign(359.99), 12);
+        // 360° normalises to 0° → part 0 → 1
+        assert_eq!(navamsa_sign(360.0), 1);
     }
+
+    // Old Chara/Sthira/Ubhaya test cases (kept for reference):
+    // #[test]
+    // fn test_navamsa_aries_first() {
+    //     // Aries 0°: Chara → start Aries (1), navamsa 0 → Aries = 1
+    //     assert_eq!(navamsa_sign(0.0), 1);
+    // }
+    // #[test]
+    // fn test_navamsa_taurus_first() {
+    //     // Taurus 0° = 30°: Sthira → start Capricorn (10, idx=9), navamsa 0 = 10
+    //     assert_eq!(navamsa_sign(30.0), 10);
+    // }
+    // #[test]
+    // fn test_navamsa_gemini_first() {
+    //     // Gemini 0° = 60°: Ubhaya → start Cancer (4, idx=3), navamsa 0 = 4
+    //     assert_eq!(navamsa_sign(60.0), 4);
+    // }
+    // #[test]
+    // fn test_navamsa_capricorn_first() {
+    //     // Capricorn 0° = 270°: Chara → start Aries (1), navamsa 0 = 1
+    //     assert_eq!(navamsa_sign(270.0), 1);
+    // }
+    // #[test]
+    // fn test_navamsa_second_navamsa_taurus() {
+    //     // Taurus 3°21' = 30° + 3.35° — navamsa idx = 1 → Aquarius (10+1=11)
+    //     assert_eq!(navamsa_sign(33.35), 11);
+    // }
 }

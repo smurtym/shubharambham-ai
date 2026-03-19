@@ -9,7 +9,7 @@ use std::f64::consts::PI;
 /// Authoritative city record — compiled into the WASM binary. Never serialised
 /// directly; a `CityResponse` is built per-request from this + one translation.
 pub struct CityRecord {
-    pub city_id:        u16,
+    pub city_id:        u32,
     pub canonical_name: &'static str,
     pub timezone:       &'static str,
     pub translations:   &'static [(&'static str, TranslationEntry)],
@@ -28,20 +28,28 @@ pub struct TranslationEntry {
 // decode_city_id — pure helper (FR-013)
 // ---------------------------------------------------------------------------
 
-/// Decode a 16-bit zoom-7 quadkey back to its tile-centre (lat, lng).
+/// Decode a zoom-15 quadkey stored as a decimal u32 back to its tile-centre (lat, lng).
 ///
-/// Formula:
-///   tile_x = city_id / 128
-///   tile_y = city_id % 128
-///   lng    = (tile_x + 0.5) / 128.0 * 360.0 - 180.0
-///   n      = π * (1.0 - 2.0 * (tile_y + 0.5) / 128.0)
-///   lat    = n.sinh().atan() * 180.0 / π
-pub fn decode_city_id(city_id: u16) -> (f64, f64) {
-    let tile_x = (city_id / 128) as f64;
-    let tile_y = (city_id % 128) as f64;
-    let lng    = (tile_x + 0.5) / 128.0 * 360.0 - 180.0;
-    let n      = PI * (1.0 - 2.0 * (tile_y + 0.5) / 128.0);
-    let lat    = n.sinh().atan() * 180.0 / PI;
+/// city_id is the base-4 quadkey string interpreted as a decimal integer.
+/// Each base-4 digit encodes one zoom level: low bit → tile_x bit, high bit → tile_y bit.
+///
+/// Example: quadkey "123301331322112" (base 4) = 466083478 (decimal)
+///          → tile_x = 23526, tile_y = 14777 → (17.38°N, 78.47°E) = Hyderabad
+pub fn decode_city_id(city_id: u32) -> (f64, f64) {
+    const ZOOM:  u32 = 15;
+    const TILES: f64 = 32_768.0; // 2^15
+    let mut tile_x: u32 = 0;
+    let mut tile_y: u32 = 0;
+    let mut q = city_id;
+    for k in 0..ZOOM {
+        let digit = q % 4;
+        q /= 4;
+        tile_x |= (digit & 1) << k;
+        tile_y |= ((digit >> 1) & 1) << k;
+    }
+    let lng = (tile_x as f64 + 0.5) / TILES * 360.0 - 180.0;
+    let n   = PI * (1.0 - 2.0 * (tile_y as f64 + 0.5) / TILES);
+    let lat = n.sinh().atan() * 180.0 / PI;
     (lat, lng)
 }
 
@@ -53,7 +61,7 @@ pub fn decode_city_id(city_id: u16) -> (f64, f64) {
 #[serde(rename_all = "camelCase")]
 pub struct CityResponse {
     pub lang:           String,
-    pub city_id:        u16,
+    pub city_id:        u32,
     pub time_zone:      String,
     pub canonical_name: String,
     pub city_name:      String,
@@ -255,9 +263,9 @@ mod tests {
 
     #[test]
     fn test_decode_city_id() {
-        let (lat, lng) = decode_city_id(11705); // Hyderabad tile 91,57
-        assert!((lat - 17.97).abs() < 0.1, "lat out of range: {lat}");
-        assert!((lng - 77.34).abs() < 0.1, "lng out of range: {lng}");
+        let (lat, lng) = decode_city_id(466083478); // Hyderabad tile 91,57
+        assert!((lat - 17.38).abs() < 0.1, "lat out of range: {lat}");
+        assert!((lng - 78.47).abs() < 0.1, "lng out of range: {lng}");
     }
 
     // -----------------------------------------------------------------------
