@@ -13,7 +13,7 @@ Input to the `"horoscope_positions"` bridge operation.
 | Field | Type | Constraints | Description |
 |-------|------|-------------|-------------|
 | `operation` | string | must equal `"horoscope_positions"` | Bridge operation name (required by bridge contract) |
-| `cityId` | u16 | must exist in CITIES store | 16-bit zoom-7 quadkey identifying the city |
+| `cityId` | u32 | must exist in CITIES store | 32-bit zoom-15 base-4 quadkey identifying the city |
 | `localTime` | string | `YYYY-MM-DDTHH:MM:SS`, no tz suffix | Date and time in the city's local timezone |
 | `lang` | string | BCP-47; unknown → falls back to `"en"` | Display language for all translated strings |
 
@@ -26,7 +26,7 @@ Top-level JSON output object.
 | Field | Type | Description |
 |-------|------|-------------|
 | `lang` | string | Echoed input lang |
-| `cityId` | u16 | Echoed input city ID |
+| `cityId` | u32 | Echoed input city ID |
 | `cityName` | string | Translated city name |
 | `region1` | string | Translated state/province |
 | `region2` | string | Translated country |

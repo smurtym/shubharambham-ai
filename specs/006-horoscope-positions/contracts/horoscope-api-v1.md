@@ -49,7 +49,7 @@ int bridge(
 | Field | Type | Constraints |
 |-------|------|-------------|
 | `operation` | string | must equal `"horoscope_positions"` |
-| `cityId` | integer (u16) | must exist in compiled city store |
+| `cityId` | integer (u32) | must exist in compiled city store |
 | `localTime` | string | `YYYY-MM-DDTHH:MM:SS`, no timezone suffix |
 | `lang` | string | BCP-47; unknown values fall back to `"en"` |
 

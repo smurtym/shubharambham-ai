@@ -14,7 +14,7 @@ The authoritative city entry in the hardcoded static array. Never serialized dir
 
 | Field | Rust Type | Description |
 |-------|-----------|-------------|
-| `city_id` | `u16` | 16-bit quadkey tile identifier at zoom level 7 (formula: `tile_x × 128 + tile_y`, Web Mercator). Unique across all records. Max value 16383. |
+| `city_id` | `u32` | 32-bit base-4 zoom-15 quadkey stored as decimal. Unique across all records. Decoded to lat/lng by `decode_city_id()`. |
 | `canonical_name` | `&'static str` | City name always in English. Non-empty. Never changes with language. |
 | `timezone` | `&'static str` | IANA timezone identifier (e.g., `"Asia/Kolkata"`). |
 | `translations` | `&'static [(&'static str, TranslationEntry)]` | Ordered slice of (language-code, name-set) pairs. May be empty. |
@@ -64,17 +64,17 @@ Ephemeral Rust struct constructed per-request from `CityRecord` + one `Translati
 
 ### decode_city_id *(internal — pure function in `data/mod.rs`)*
 
-Stateless helper that maps a 16-bit quadkey back to its tile-centre coordinates. Called when building each `CityResponse`; the result is placed directly into `lat`/`lng`.
+Stateless helper that maps a 32-bit zoom-15 quadkey back to its tile-centre coordinates. Called when building each `CityResponse`; the result is placed directly into `lat`/`lng`.
 
 ```
-pub fn decode_city_id(city_id: u16) -> (f64, f64)
+pub fn decode_city_id(city_id: u32) -> (f64, f64)
 ```
 
 | Step | Formula |
-|------|---------|
-| Decompose | `tile_x = city_id / 128`, `tile_y = city_id % 128` |
-| Longitude | `lng = (tile_x as f64 + 0.5) / 128.0 * 360.0 - 180.0` |
-| Latitude | `n = π × (1.0 − 2.0 × (tile_y as f64 + 0.5) / 128.0)` → `lat = n.sinh().atan() × 180.0 / π` |
+|------|--------|
+| Decompose | Decode 15 base-4 digits (bit-interleaved): each digit `d = q % 4; q /= 4`; low bit → `tile_x`, high bit → `tile_y` |
+| Longitude | `lng = (tile_x as f64 + 0.5) / 32768.0 * 360.0 − 180.0` |
+| Latitude | `n = π × (1.0 − 2.0 × (tile_y as f64 + 0.5) / 32768.0)` → `lat = atan(sinh(n)) × 180.0 / π` |
 
 Returns `(lat, lng)` in decimal degrees. Produces tile-centre values — not exact city coordinates.
 
@@ -115,7 +115,7 @@ Initial hardcoded `CITIES` array (4 cities):
 | 11701 | Delhi | Asia/Kolkata | en only |
 | 4784 | New York | America/New_York | en only |
 
-> **Note**: `city_id` values are precomputed zoom-level-7 quadkeys using the formula `tile_x × 128 + tile_y` (Web Mercator slippy map convention at zoom 7). All five values are provably unique (Hyderabad: tile 91,57; Vijayawada: tile 92,58; Eluru: tile 92,57; Delhi: tile 91,53; New York: tile 37,48).
+> **Note**: `city_id` values are zoom-15 base-4 quadkeys stored as decimal u32. See `data/cities.csv` for the authoritative current values and `decode_city_id()` in `astro-wasm/src/data/mod.rs` for the encoding/decoding algorithm. The seed cityId values in the table above reflect the original spec estimates and have since been superseded by the correct zoom-15 values in `cities.csv`.
 
 **Sort order example for `lang="te"`** (Telangana-first, then city-name tie-break within Andhra Pradesh):
 

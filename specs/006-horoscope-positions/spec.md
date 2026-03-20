@@ -66,9 +66,9 @@ The caller receives the resolved city information (translated name, region, coun
 
 ### Functional Requirements
 
-- **FR-001**: The operation MUST accept three inputs: a language code (`lang`, BCP-47), a 16-bit city identifier (`cityId`), and a local datetime string (`localTime`) in the format `YYYY-MM-DDTHH:MM:SS` without a timezone suffix. The timezone is derived from the city record. The engine MUST accept any valid calendar date — past, present, or future — within the range supported by the Swiss Ephemeris.
+- **FR-001**: The operation MUST accept three inputs: a language code (`lang`, BCP-47), a 32-bit city identifier (`cityId`), and a local datetime string (`localTime`) in the format `YYYY-MM-DDTHH:MM:SS` without a timezone suffix. The timezone is derived from the city record. The engine MUST accept any valid calendar date — past, present, or future — within the range supported by the Swiss Ephemeris.
 - **FR-002**: The city's IANA timezone string MUST be resolved from the city store using `cityId`. The engine MUST convert `localTime` from that local timezone to UTC using a full IANA timezone database (provided via the `chrono-tz` crate or equivalent). The resulting UTC datetime is then converted to the Julian Day used for all Swiss Ephemeris calculations. For DST-observing timezones, ambiguous local times (clocks fall back) are resolved using the earlier UTC offset (pre-transition); gap times (clocks spring forward) are resolved by advancing to the post-gap UTC time.
-- **FR-003**: The city's geographic coordinates (latitude and longitude) MUST be resolved from the city store using the same zoom-7 tile-centre formula used by the city-data feature, and MUST be used for Ascendant calculation.
+- **FR-003**: The city's geographic coordinates (latitude and longitude) MUST be resolved from the city store using the zoom-15 base-4 quadkey decoding used by the city-data feature (`decode_city_id()`), and MUST be used for Ascendant calculation.
 - **FR-004**: All sidereal longitudes — including the Ascendant — MUST be computed using the **True Chitrapaksha Ayanamsa**, implemented via Swiss Ephemeris sidereal mode `SE_SIDM_TRUE_CITRA` (mode 27), which fixes the star Spica/Chitra at exactly 0° Libra using its true stellar position. This mode MUST be applied consistently to all ten bodies. Lahiri (mode 1) and all other ayanamsa modes are explicitly excluded.
 - **FR-005**: The Ascendant (Lagna) degree MUST be calculated using the Swiss Ephemeris `swe_houses_ex` function with the **Whole Sign** house system (hsys `'W'`), the resolved city latitude and longitude, and the computed Julian Day. The Ascendant is treated as a planetary body in its own right: its exact sidereal degree (after ayanamsa subtraction) MUST be returned as a `PlanetaryPosition` entry with its own nakshatra, pada, and navamsa values. House cusp degrees are not part of this feature's output.
 - **FR-006**: The engine MUST compute sidereal positions for exactly ten bodies: Ascendant, Sun, Moon, Mars, Mercury, Jupiter, Venus, Saturn, Rahu (True Node), and Ketu (True Node + 180°).
@@ -95,7 +95,7 @@ The caller receives the resolved city information (translated name, region, coun
 
 ### Key Entities
 
-- **HoroscopeRequest**: Inputs — `lang` (BCP-47 string), `cityId` (u16), `localTime` (local datetime string, no timezone suffix, format `YYYY-MM-DDTHH:MM:SS`)
+- **HoroscopeRequest**: Inputs — `lang` (BCP-47 string), `cityId` (u32), `localTime` (local datetime string, no timezone suffix, format `YYYY-MM-DDTHH:MM:SS`)
 - **HoroscopeResponse**: Echoed `lang` and `cityId`; resolved city context (`cityName`, `region1`, `region2`, `lat`, `lng`, `timezone`); a `planets` field that is a **keyed JSON object** mapping each canonical body name (English, e.g. `"Sun"`, `"Ascendant"`) to its **PlanetaryPosition** record. The ten keys are fixed: `"Ascendant"`, `"Sun"`, `"Moon"`, `"Mars"`, `"Mercury"`, `"Jupiter"`, `"Venus"`, `"Saturn"`, `"Rahu"`, `"Ketu"`.
 - **PlanetaryPosition**: Complete sidereal position for one celestial body — translated name and abbreviation, absolute longitude, zodiac sign, sign-degrees, minutes, seconds, nakshatra, pada, navamsa sign — all translated per the request `lang`
 - **CelestialBody**: One of the ten bodies — Ascendant, Sun, Moon, Mars, Mercury, Jupiter, Venus, Saturn, Rahu, Ketu
@@ -112,7 +112,7 @@ The caller receives the resolved city information (translated name, region, coun
 
 ## Assumptions
 
-- City geographic coordinates are the zoom-7 tile-centre of the city's Web Mercator tile (same formula as the city-data feature). This precision (±22 km) is adequate for Ascendant calculation at birth-town granularity.
+- City geographic coordinates are derived from the city's zoom-15 base-4 quadkey (`decode_city_id()` in `astro-wasm/src/data/mod.rs`). This precision (±3 km at zoom 15) is more than adequate for Ascendant calculation at birth-town granularity.
 - `localTime` seconds are optional for callers — supplying `HH:MM:00` is valid for minute-precision birth times.
 - A full IANA timezone database crate (`chrono-tz` or equivalent) is an accepted dependency for this feature. Unlike the city-data feature, the zero-new-crates constraint does not apply here — correct timezone conversion is a fundamental correctness requirement for astrology.
 - DST ambiguity (clocks fall back) is resolved using the earlier UTC offset; DST gap (clocks spring forward) is resolved by advancing to the post-gap time. The engine handles this internally — the caller supplies only the naive local time.

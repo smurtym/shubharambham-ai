@@ -30,7 +30,7 @@ A `list_cities` operation on the existing WASM bridge. Call it with a language c
 
 ```rust
 CityRecord {
-    city_id: <unique_u16_quadkey>,
+    city_id: <unique_u32_quadkey>,
     canonical_name: "CityName",
     timezone: "Region/City",
     translations: &[
@@ -55,7 +55,7 @@ CityRecord {
 3. Run `cargo test` — the data integrity tests will catch duplicate `city_id`, empty `canonical_name`, or unknown timezone.
 4. Rebuild the WASM binary: `./build.sh`
 
-> **Note on `city_id`**: Use the 16-bit quadkey for the city's geographic tile at zoom level 8. A quadkey calculator tool or the specification document can derive this from the city's approximate coordinates.
+> **Note on `city_id`**: Use the 32-bit base-4 zoom-15 quadkey for the city's geographic tile. Obtain the 15-digit base-4 quadkey string at zoom 15 (e.g., from https://labs.mapbox.com/what-the-tile/), then read those digits as a plain decimal integer. See `decode_city_id()` in `astro-wasm/src/data/mod.rs` for the inverse formula.
 
 > **Note on sort keys**: `region2_order` controls country grouping (e.g., all India cities before USA cities). `region1_order` controls state grouping within a country. Lower numbers appear first. Use consistent values across entries (e.g., `region2_order: 1` for all India entries in Telugu).
 

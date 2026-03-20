@@ -96,7 +96,7 @@ Returns a language-filtered, sort-ordered list of cities compiled into the WASM 
 | Field | Type | Description |
 |-------|------|-------------|
 | `lang` | string | Echoed language code from request |
-| `cityId` | integer | 16-bit quadkey at zoom level 7 (`tile_x × 128 + tile_y`, Web Mercator) — unique city identifier |
+| `cityId` | integer | 32-bit base-4 zoom-15 quadkey stored as decimal u32 — unique city identifier |
 | `timeZone` | string | IANA timezone identifier |
 | `canonicalName` | string | City name in English (language-invariant) |
 | `cityName` | string | City name in requested language |

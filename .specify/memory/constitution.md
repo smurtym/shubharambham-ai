@@ -1,30 +1,38 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: (none) → 1.0.0 (initial ratification — all placeholders replaced)
+Version change: 1.0.0 → 2.0.0 (MAJOR: backward-incompatible redefinition of
+Principle II — "Lean Web Presentation" removed; replaced with
+"React + TypeScript Presentation Layer")
 
-Modified principles: N/A (first fill from template)
+Modified principles:
+  - Principle II: "Lean Web Presentation (NON-NEGOTIABLE)"
+    → "React + TypeScript Presentation Layer (NON-NEGOTIABLE)"
+    Vanilla JS, no-framework, no-library mandate fully replaced with
+    TypeScript + React 18 + Material UI + Noto Sans Telugu font mandate.
 
-Added sections:
-  - Core Principles (6 principles)
-  - Technology Stack Constraints
-  - Development Workflow
-  - Governance
+Added sections: None
 
-Removed sections: N/A
+Removed sections: None
 
 Templates reviewed:
   ✅ .specify/templates/plan-template.md — No changes needed; Constitution Check
-     section is populated dynamically per-feature by /speckit.plan command.
+     section is populated dynamically per-feature; no vanilla JS references.
   ✅ .specify/templates/spec-template.md — No changes needed; generic template
      compatible with all six principles.
-  ✅ .specify/templates/tasks-template.md — No changes needed; task structure
-     accommodates WASM, localization, and contract task types.
+  ✅ .specify/templates/tasks-template.md — No changes needed; "[framework]"
+     placeholder is generic and already maps to React/TypeScript.
   ✅ .github/prompts/*.md — Speckit workflow drivers; no project-specific
-     references to update.
+     technology references requiring update.
 
 Follow-up TODOs:
-  - None. All fields resolved from user requirements.
+  - Any existing feature plans (plan.md) that have a Constitution Check referencing
+    the old Principle II ("no frameworks") MUST be re-reviewed against v2.0.0 and
+    their Complexity Tracking updated. Feature specs themselves are unaffected.
+  - The existing vanilla-JS web/ source files (index.html, astro-glue.js,
+    components.js, data.js, style.css) are legacy artifacts. Feature 008 and all
+    subsequent features MUST be implemented using the new React + TypeScript stack.
+    Migration of earlier features is left to a dedicated migration task.
 -->
 
 # Shubharambham AI Constitution
@@ -44,17 +52,29 @@ any calculation, data transformation, or i18n logic.
 - Rust crates added to the project MUST be justified; prefer `no_std`-compatible
   or low-footprint crates to keep the WASM binary small.
 
-### II. Lean Web Presentation (NON-NEGOTIABLE)
+### II. React + TypeScript Presentation Layer (NON-NEGOTIABLE)
 
-The presentation layer MUST use only HTML, CSS, and vanilla JavaScript.
+The presentation layer MUST be implemented in TypeScript using React 18 or later
+as the sole UI component framework.
 
-- No JavaScript frameworks (React, Vue, Angular, Svelte, etc.) are permitted.
-- No external JavaScript libraries (lodash, moment, jQuery, etc.) are permitted.
-- Inline or bundled third-party CSS frameworks are NOT permitted.
-- The JS layer MUST only: invoke WASM exports, receive returned data structures,
-  and render them into the DOM.
-- Total initial page payload MUST remain as small as reasonably achievable to
-  serve users on slow connections with older mobile devices.
+- **React 18+** is the ONLY permitted UI framework. Vue, Angular, Svelte, and all
+  other frameworks are excluded.
+- **Material UI (MUI) v6+** is the ONLY permitted component and styling library.
+  No other CSS frameworks, component libraries, or inline third-party stylesheets
+  are permitted.
+- **Noto Sans Telugu** MUST be loaded as the primary font to ensure correct
+  rendering of Telugu script across all platforms and browsers. Latin glyphs MUST
+  also fall back to a Noto Sans variant for visual consistency.
+- **TypeScript** (strict mode) MUST be used for all source files in the
+  presentation layer. Plain `.js` files in new features are not permitted.
+- **Vite** is the ONLY permitted build/bundler tool for the React frontend.
+- The React/TypeScript layer MUST NOT perform any calculation, data
+  transformation, or i18n logic — these remain exclusively in Rust/WASM.
+- The React layer MUST only: invoke WASM exports, receive returned data
+  structures, and render them into React components using MUI primitives.
+- Bundle size MUST be managed consciously. Code-splitting MUST be applied at the
+  route or feature boundary to avoid a monolithic initial load. The WASM payload
+  is excluded from this constraint.
 
 ### III. Contract-Driven WASM API
 
@@ -112,16 +132,18 @@ Rust WASM module.
 - **Computation**: Rust (stable toolchain) compiled to WASM via Emscripten.
 - **Ephemeris**: Swiss Ephemeris (`swisseph`) C library, wrapped in Rust via FFI,
   with ephemeris data files embedded in the Emscripten virtual filesystem.
-- **Presentation**: HTML5, CSS3, vanilla ES6+ JavaScript (no transpilation required
-  for target browsers).
-- **Build**: Emscripten (`emcc`) for WASM; no additional build systems unless
-  strictly necessary (e.g., a simple `Makefile` or shell script is preferred over
-  a heavy bundler).
-- **Testing**: `cargo test` for Rust unit/integration tests; minimal browser-based
-  smoke tests for the JS integration layer.
+- **Presentation**: TypeScript (strict mode), React 18+, Material UI (MUI) v6+.
+  Noto Sans Telugu (and Noto Sans for Latin) MUST be loaded as the primary
+  typeface — via self-hosting or Google Fonts CDN.
+- **Build**: Emscripten (`emcc`) for WASM compilation; **Vite** for the React/TS
+  frontend bundle. No other bundlers (webpack, rollup standalone, parcel) are
+  permitted for the frontend.
+- **Testing**: `cargo test` for Rust unit/integration tests; Playwright for
+  browser-based end-to-end tests covering the React + WASM integration layer.
 - **Versioning**: Semantic versioning (`MAJOR.MINOR.PATCH`) for the WASM module
   and for each WASM API contract independently.
-- **Deployment target**: Static file hosting; no server-side runtime required.
+- **Deployment target**: Static file hosting (Vite build output + WASM assets);
+  no server-side runtime required.
 
 ## Development Workflow
 
@@ -132,13 +154,17 @@ Rust WASM module.
 3. **Test before ship**: Rust calculation modules MUST have passing reference-value
    tests. New tests MUST be written/approved before implementation code is merged.
 4. **Payload audit**: Before any feature is marked complete, the combined WASM +
-   HTML + CSS + JS payload size MUST be measured and compared against the baseline.
-   Regressions MUST be justified.
+   React bundle payload size MUST be measured and compared against the baseline.
+   Significant regressions MUST be justified. Code-splitting is the primary
+   mitigation strategy.
 5. **Contract review**: Any change to a published WASM API contract (parameter
    names, types, return shape) MUST be treated as a breaking change and follow the
    versioning policy in Principle III.
 6. **Locale completeness**: A feature is not shippable if English strings are
    present but Telugu strings are absent (or vice versa).
+7. **TypeScript strict**: All new `.tsx`/`.ts` files MUST pass TypeScript strict
+   mode with zero type errors. `any` casts MUST be documented with a comment
+   explaining why the type boundary cannot be expressed statically.
 
 ## Governance
 
@@ -158,4 +184,4 @@ All feature plans and pull requests MUST verify compliance with each principle
 before merge. Complexity or deviations MUST be explicitly justified in plan.md
 under the Complexity Tracking section.
 
-**Version**: 1.0.0 | **Ratified**: 2026-03-14 | **Last Amended**: 2026-03-14
+**Version**: 2.0.0 | **Ratified**: 2026-03-14 | **Last Amended**: 2026-03-20

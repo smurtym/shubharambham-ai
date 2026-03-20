@@ -4,7 +4,8 @@
 # from this file at build time by build.rs — do NOT edit cities.rs directly.
 #
 # Columns (all required, no commas allowed inside field values):
-#   city_id        — 16-bit quadkey: tile_x*128 + tile_y (zoom-7 Web Mercator)
+#   city_id        — 32-bit zoom-15 quadkey stored as decimal u32 (base-4 quadkey digits interleaved);
+#                    see decode_city_id() in astro-wasm/src/data/mod.rs for the decoding algorithm.
 #   canonical_name — City name in English (used for logging, tests, canonicalName field)
 #   timezone       — IANA timezone (e.g. Asia/Kolkata, America/New_York)
 #   lang           — BCP-47 language code (en / te / hi / ...)
@@ -16,9 +17,11 @@
 #
 # To ADD A CITY: append one row per language translation.
 #   All rows with the same city_id become one CityRecord.
-#   city_id is computed as: tile_x * 128 + tile_y
-#   Use https://www.maptiler.com/google-maps-coordinates-tile-bounds-projection/
-#   to look up tile_x / tile_y at zoom level 7 for the city's coordinates.
+#   city_id is a zoom-15 base-4 quadkey (15 digits, each 0–3) parsed as a decimal integer.
+#   To compute: obtain the 15-character base-4 quadkey for the city's lat/lng at zoom 15,
+#   then read those digits as a plain decimal number (e.g. quadkey "123301331322112" → 466083476).
+#   Tools: https://labs.mapbox.com/what-the-tile/ (set zoom=15, copy quadkey, interpret as decimal).
+#   Reference implementation: decode_city_id() in astro-wasm/src/data/mod.rs.
 #
 # To ADD A LANGUAGE to an existing city: add a new row with the same city_id
 #   and the new lang code. The city will automatically appear in that language's

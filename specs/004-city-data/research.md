@@ -54,7 +54,7 @@
 **Question**: Struct layout for `CityRecord` and `TranslationEntry` in a hardcoded static array.
 
 **Decision**:
-- `CityRecord`: `city_id: u16`, `canonical_name: &'static str`, `timezone: &'static str`, `translations: &'static [(&'static str, TranslationEntry)]` (slice of (lang, entry) pairs — zero heap allocation, compatible with `const` / `static` context).
+- `CityRecord`: `city_id: u32`, `canonical_name: &'static str`, `timezone: &'static str`, `translations: &'static [(&'static str, TranslationEntry)]` (slice of (lang, entry) pairs — zero heap allocation, compatible with `const` / `static` context).
 - `TranslationEntry`: `city_name: &'static str`, `region1: &'static str`, `region2: &'static str`, `region1_order: u16`, `region2_order: u16`.
 - A separate `CityResponse` struct (with `#[derive(serde::Serialize)]`) is used for serialization only; it holds `String` / `u32` fields and is constructed per-request from `CityRecord` + `TranslationEntry`.
 

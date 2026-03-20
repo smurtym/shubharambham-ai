@@ -121,7 +121,7 @@ The top-level value is always a JSON object, consistent with the existing bridge
 | Field | Type | Description |
 |-------|------|-------------|
 | `lang` | string | Echoes the language code from the request |
-| `cityId` | integer | 16-bit quadkey encoding the city's tile at zoom level 7 (formula: `tile_x × 128 + tile_y`, Web Mercator) |
+| `cityId` | integer | 32-bit base-4 zoom-15 quadkey encoded as decimal u32 (decoded to lat/lng by `decode_city_id()` in Rust) |
 | `timeZone` | string | IANA timezone identifier (e.g., `"Asia/Kolkata"`) |
 | `canonicalName` | string | City name always in English; never changes with `lang` |
 | `cityName` | string | City name in the requested language |
@@ -134,13 +134,13 @@ The top-level value is always a JSON object, consistent with the existing bridge
 
 - **FR-001**: The library MUST expose a `list_cities` operation via the existing bridge contract, accepting a `lang` parameter and returning a JSON object `{"cities": […]}` on success or `{"error": "…"}` on failure, as defined above. The top-level response is always an object — never a bare array.
 - **FR-002**: The library MUST store all city data as a static array compiled into the WASM binary. No external database, file, or network call is involved at runtime. The source of truth for city data is `data/cities.csv` at the repository root; `astro-wasm/src/data/cities.rs` is auto-generated from this CSV at build time by `build.rs` and MUST NOT be edited directly.
-- **FR-003**: Each city record in the data store MUST contain: a unique 16-bit quadkey as its identifier, an IANA timezone string, a canonical English name, and a map of language-keyed translation entries.
+- **FR-003**: Each city record in the data store MUST contain: a unique 32-bit quadkey as its identifier, an IANA timezone string, a canonical English name, and a map of language-keyed translation entries.
 - **FR-004**: Each translation entry in the data store MUST contain: `cityName`, `region1`, `region2`, `region1Order`, and `region2Order` for that language. `region1Order` and `region2Order` are integer sort keys used solely for ordering; they MUST NOT appear in the JSON response.
 - **FR-005**: The library MUST exclude any city from the response whose data store record contains no translation entry for the requested language.
 - **FR-006**: The `canonicalName` field in every response entry MUST always be the English name of the city, regardless of the `lang` parameter.
 - **FR-007**: The `lang` field in every response entry MUST echo the `lang` value from the request.
-- **FR-008**: The `cityId` field MUST be the city's 16-bit quadkey integer computed at zoom level 7 (`tile_x × 128 + tile_y`, Web Mercator). The `lat` and `lng` response fields MUST be decoded from `cityId` inside Rust using the inverse tile-centre formula; no coordinates are stored in the data array.
-- **FR-013**: The Rust `data` module MUST expose a `pub fn decode_city_id(city_id: u16) -> (f64, f64)` function returning `(lat, lng)` in decimal degrees using the Web Mercator tile-centre formula. The JS layer MUST NOT implement any coordinate decoding; it receives ready-decoded `lat`/`lng` values in the response payload.
+- **FR-008**: The `cityId` field MUST be the city's 32-bit base-4 zoom-15 quadkey stored as a decimal `u32`. The `lat` and `lng` response fields MUST be decoded from `cityId` inside Rust using `decode_city_id()`; no coordinates are stored in the data array.
+- **FR-013**: The Rust `data` module MUST expose a `pub fn decode_city_id(city_id: u32) -> (f64, f64)` function returning `(lat, lng)` in decimal degrees by decoding the base-4 zoom-15 quadkey. The JS layer MUST NOT implement any coordinate decoding; it receives ready-decoded `lat`/`lng` values in the response payload.
 - **FR-009**: Adding a new city or a new language translation MUST require only a change to `data/cities.csv` and a rebuild of the WASM binary. No Rust source edits, schema migrations, or configuration file changes are required. A non-technical editor can manage `data/cities.csv` directly via a text editor or the GitHub web UI.
 - **FR-014**: The `build.rs` script MUST read `data/cities.csv` at compile time, parse it into `CityRecord` / `TranslationEntry` struct literals, and write the result into a generated Rust source file (`OUT_DIR/cities_generated.rs`). The generator MUST emit clear build errors with line numbers for malformed rows, unknown columns, or duplicate `city_id` values. No new `[build-dependencies]` crates are required — the generator uses only `std`.
 - **FR-010**: The city data array MUST be validated at build/test time for: unique `cityId` values, non-empty `canonicalName` for every city, and valid IANA timezone strings.
@@ -163,10 +163,10 @@ This set validates: translated output (Hyderabad, Eluru, Vijayawada in Telugu), 
 
 ### Key Entities
 
-- **City Record**: The authoritative description of a city held in the Rust data store. Contains a unique 16-bit quadkey identifier, an IANA timezone, a canonical English name, and a map of translated name sets keyed by language code. Not directly exposed to JS — it is the source from which City Response Objects are derived.
+- **City Record**: The authoritative description of a city held in the Rust data store. Contains a unique 32-bit quadkey identifier, an IANA timezone, a canonical English name, and a map of translated name sets keyed by language code. Not directly exposed to JS — it is the source from which City Response Objects are derived.
 - **Translation Entry**: A language-specific name set within a City Record. Contains `cityName`, `region1`, `region2`, `region1Order`, and `region2Order` for one language. `region1Order` and `region2Order` are integer sort keys that control the ordering of the response for this language (e.g., lower values surface preferred regions first). A City Record may have zero or more Translation Entries.
 - **City Response Object**: The JSON object returned to the web app. Derived from a City Record + one Translation Entry for the requested language. Contains `lang`, `cityId`, `timeZone`, `canonicalName`, `cityName`, `region1`, `region2`, `lat`, and `lng`. `lat` and `lng` are decoded from `cityId` in Rust — the JS layer receives them as plain numbers. Only emitted when a matching Translation Entry exists.
-- **QuadKey**: A 16-bit integer that encodes a geographic tile at zoom level 7 (128×128 tile grid, Web Mercator). Computed as `tile_x × 128 + tile_y`. Serves as the unique, stable identifier for a city. The tile-centre latitude and longitude are decoded from the quadkey in Rust (`decode_city_id`) and included as `lat`/`lng` in every response entry — the JS layer never performs this decoding.
+- **QuadKey**: A 32-bit integer that encodes a geographic tile at zoom level 15 (32768×32768 tile grid, Web Mercator). Stored as the decimal interpretation of the 15-digit base-4 quadkey string. Serves as the unique, stable identifier for a city. The tile-centre latitude and longitude are decoded from the quadkey in Rust (`decode_city_id`) and included as `lat`/`lng` in every response entry — the JS layer never performs this decoding.
 
 ## Assumptions
 
