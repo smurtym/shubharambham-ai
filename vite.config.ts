@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 import { minify } from 'html-minifier-terser';
 import { copyFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
@@ -13,8 +14,15 @@ export default defineConfig({
     outDir: '../dist',
     emptyOutDir: true,
     minify: true,
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'web/index.html'),
+        horoscope: resolve(__dirname, 'web/horoscope/index.html'),
+      },
+    },
   },
   plugins: [
+    react(),
     {
       name: 'html-minify',
       apply: 'build',

@@ -1,0 +1,29 @@
+.air-datepicker,
+.air-datepicker *,
+.air-datepicker-global-container,
+.air-datepicker-global-container * {
+  font-family: "Noto Sans Telugu", "Noto Sans", sans-serif !important;
+}
+
+/* Bigger calendar */
+.air-datepicker {
+  width: 320px !important;
+  font-size: 1rem !important;
+}
+
+.air-datepicker--nav-title,
+.air-datepicker--nav-action {
+  font-size: 1rem !important;
+}
+
+.air-datepicker--day-name {
+  font-size: 0.9rem !important;
+  height: 38px !important;
+  line-height: 38px !important;
+}
+
+.air-datepicker-cell.-day- {
+  height: 40px !important;
+  line-height: 40px !important;
+  font-size: 0.95rem !important;
+}
