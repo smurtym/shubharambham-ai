@@ -11,8 +11,8 @@
   <p>Work in Progress</p>
 
   <form id="horoscope-form">
-    <label for="city-id">City ID:</label>
-    <input type="number" id="city-id" value="11705" min="0">
+    <label for="city-id">City:</label>
+    <select id="city-id"><option value="">Loading cities…</option></select>
 
     <label for="local-time">Local Date &amp; Time:</label>
     <input type="datetime-local" id="local-time" value="1961-10-28T07:30">
@@ -33,6 +33,11 @@
       e.preventDefault();
 
       var cityId    = parseInt(document.getElementById('city-id').value, 10);
+      if (isNaN(cityId)) {
+        resultEl.textContent = 'Error: please select a city.';
+        submitBtn.disabled = false;
+        return;
+      }
       var localTime = document.getElementById('local-time').value + ':00';
       var lang      = document.getElementById('lang').value;
       var submitBtn = document.getElementById('submit');
@@ -56,5 +61,37 @@
   <script src="data.js"></script>
   <script src="components.js"></script>
   <script src="astro.js"></script>
+  <script>
+    function populateCityDropdown(lang) {
+      var select = document.getElementById('city-id');
+      var prevId = select.value;
+      try {
+        var cities = listCities(lang);
+        select.innerHTML = '';
+        cities.forEach(function (city) {
+          var opt = document.createElement('option');
+          opt.value = city.cityId;
+          opt.textContent = city.cityName + ', ' + city.region1 + ', ' + city.region2;
+          select.appendChild(opt);
+        });
+        // Restore previous selection if still present in new language list
+        if (prevId && select.querySelector('option[value="' + prevId + '"]')) {
+          select.value = prevId;
+        }
+      } catch (err) {
+        select.innerHTML = '<option value="">Failed to load cities</option>';
+        console.error('populateCityDropdown:', err);
+      }
+    }
+
+    document.addEventListener('wasm-ready', function () {
+      var lang = document.getElementById('lang').value;
+      populateCityDropdown(lang);
+    });
+
+    document.getElementById('lang').addEventListener('change', function () {
+      populateCityDropdown(this.value);
+    });
+  </script>
 </body>
 </html>

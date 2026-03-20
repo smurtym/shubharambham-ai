@@ -364,7 +364,24 @@ mod tests {
 
     #[test]
     fn test_timezones_valid() {
-        const VALID_TIMEZONES: &[&str] = &["Asia/Kolkata", "America/New_York"];
+        const VALID_TIMEZONES: &[&str] = &[
+            "Africa/Cairo", "Africa/Johannesburg", "Africa/Lagos", "Africa/Nairobi",
+            "America/Argentina/Buenos_Aires", "America/Chicago", "America/Denver",
+            "America/Detroit", "America/Indiana/Indianapolis",
+            "America/Kentucky/Louisville", "America/Los_Angeles", "America/Mexico_City",
+            "America/New_York", "America/Phoenix", "America/Santiago", "America/Sao_Paulo",
+            "America/Toronto", "America/Vancouver",
+            "Asia/Bahrain", "Asia/Bangkok", "Asia/Colombo", "Asia/Dhaka", "Asia/Dubai",
+            "Asia/Hong_Kong", "Asia/Jerusalem", "Asia/Kathmandu", "Asia/Kolkata",
+            "Asia/Kuala_Lumpur", "Asia/Qatar", "Asia/Riyadh", "Asia/Seoul",
+            "Asia/Shanghai", "Asia/Singapore", "Asia/Taipei", "Asia/Tokyo", "Asia/Yangon",
+            "Australia/Melbourne", "Australia/Perth", "Australia/Sydney",
+            "Europe/Amsterdam", "Europe/Berlin", "Europe/Copenhagen", "Europe/Dublin",
+            "Europe/Helsinki", "Europe/Lisbon", "Europe/London", "Europe/Madrid",
+            "Europe/Moscow", "Europe/Oslo", "Europe/Paris", "Europe/Stockholm",
+            "Europe/Vienna", "Europe/Warsaw",
+            "Pacific/Auckland",
+        ];
         for rec in cities::CITIES {
             assert!(
                 VALID_TIMEZONES.contains(&rec.timezone),

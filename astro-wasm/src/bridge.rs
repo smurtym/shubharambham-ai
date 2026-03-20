@@ -122,7 +122,7 @@ mod tests {
     use std::os::raw::c_char;
 
     fn call_bridge(op: &[u8], input: &[u8]) -> (i32, Vec<u8>) {
-        let mut output = vec![0_u8; 4096];
+        let mut output = vec![0_u8; 262144]; // 256 KB — enough for the full city list
         let ret = bridge(
             op.as_ptr() as *const c_char,
             input.as_ptr() as *const c_char,
