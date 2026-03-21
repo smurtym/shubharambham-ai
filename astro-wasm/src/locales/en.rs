@@ -80,6 +80,16 @@ pub const STRINGS: &[(&str, &str)] = &[
     // Dasa labels (2)
     ("dasa.maha",  "Mahadasa"),
     ("dasa.antar", "Antardasa"),
+    // Planet adjective forms for dasa labels (9) — same as noun forms in English
+    ("planet.dasa.Sun",     "Sun"),
+    ("planet.dasa.Moon",    "Moon"),
+    ("planet.dasa.Mars",    "Mars"),
+    ("planet.dasa.Mercury", "Mercury"),
+    ("planet.dasa.Jupiter", "Jupiter"),
+    ("planet.dasa.Venus",   "Venus"),
+    ("planet.dasa.Saturn",  "Saturn"),
+    ("planet.dasa.Rahu",    "Rahu"),
+    ("planet.dasa.Ketu",    "Ketu"),
     // Month names (12)
     ("month.1",  "January"),
     ("month.2",  "February"),
@@ -97,6 +107,6 @@ pub const STRINGS: &[(&str, &str)] = &[
 
 // SC-005 compile-time completeness check (T025)
 const _: () = assert!(
-    STRINGS.len() == 85,
-    "en.rs must contain exactly 85 locale keys (SC-005)"
+    STRINGS.len() == 94,
+    "en.rs must contain exactly 94 locale keys (SC-005)"
 );

@@ -80,6 +80,16 @@ pub const STRINGS: &[(&str, &str)] = &[
     // Dasa labels (2)
     ("dasa.maha",  "మహాదశ"),
     ("dasa.antar", "అంతర్దశ"),
+    // Planet adjective/stem forms for dasa labels (9) — used in Mahadasa/Antardasa labels
+    ("planet.dasa.Sun",     "రవి"),
+    ("planet.dasa.Moon",    "చంద్ర"),
+    ("planet.dasa.Mars",    "కుజ"),
+    ("planet.dasa.Mercury", "బుధ"),
+    ("planet.dasa.Jupiter", "గురు"),
+    ("planet.dasa.Venus",   "శుక్ర"),
+    ("planet.dasa.Saturn",  "శని"),
+    ("planet.dasa.Rahu",    "రాహు"),
+    ("planet.dasa.Ketu",    "కేతు"),
     // Month names (12)
     ("month.1",  "జనవరి"),
     ("month.2",  "ఫిబ్రవరి"),
@@ -97,6 +107,6 @@ pub const STRINGS: &[(&str, &str)] = &[
 
 // compile-time completeness check
 const _: () = assert!(
-    STRINGS.len() == 85,
+    STRINGS.len() == 94,
     "te.rs must contain exactly 85 locale keys"
 );

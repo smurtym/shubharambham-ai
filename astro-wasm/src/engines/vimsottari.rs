@@ -218,7 +218,7 @@ fn build_antardasas(
         let start_date = offset_to_date(birth_dt, start_offset);
         let end_date   = offset_to_date(birth_dt, end_offset);
 
-        let planet_name = get_string(&format!("planet.{}", antar_lord.planet_key), lang);
+        let planet_name = get_string(&format!("planet.dasa.{}", antar_lord.planet_key), lang);
         let dasa_antar  = get_string("dasa.antar", lang);
         entries.push(AntardasaEntry {
             lord:       antar_lord.planet_key.to_string(),
@@ -265,7 +265,7 @@ fn build_periods(
         let start_date = offset_to_date(birth_dt, maha_start_offset);
         let end_date   = offset_to_date(birth_dt, maha_end_offset);
 
-        let planet_name = get_string(&format!("planet.{}", lord.planet_key), lang);
+        let planet_name = get_string(&format!("planet.dasa.{}", lord.planet_key), lang);
         let dasa_maha   = get_string("dasa.maha", lang);
 
         let antardasas = build_antardasas(
@@ -665,10 +665,10 @@ mod tests {
             mars_label.contains("మహాదశ"),
             "Mars Mahadasa label should contain Telugu 'మహాదశ', got: {mars_label}"
         );
-        // Mars planet name in Telugu is "కుజుడు"
+        // Mars planet name in Telugu adjective form is "కుజ"
         assert!(
-            mars_label.contains("కుజుడు"),
-            "Mars label should contain Telugu 'కుజుడు', got: {mars_label}"
+            mars_label.contains("కుజ"),
+            "Mars label should contain Telugu 'కుజ', got: {mars_label}"
         );
 
         // Start date month in Telugu ("మార్చి" for March)
