@@ -14,6 +14,8 @@ Auto-generated from all feature plans. Last updated: 2026-03-21
 - TypeScript 5.x strict; React 18.3; MUI 6.0 + React 18, MUI v6, Emotion, `@vitejs/plugin-react`, Vite 5 (008-horoscope-ui-polish)
 - N/A — all state is in-memory; city data served by WASM (008-horoscope-ui-polish)
 - Rust 2021 (stable toolchain) + `serde 1` + `serde_json 1` (serialization); `chrono 0.4` + `chrono-tz 0.9` (date arithmetic, timezone); Swiss Ephemeris via existing C FFI — all already present in `Cargo.toml` (009-vimsottari-dasa)
+- TypeScript (strict mode), React 18 + Material UI (MUI) v6+ — `Accordion`, `AccordionSummary`, `AccordionDetails`, `Typography`, `Box`, `Stack`, `Alert`, `CircularProgress` (010-vimsottari-ui)
+- N/A — all data is fetched from the WASM engine per calculation; no persistence (010-vimsottari-ui)
 
 - Rust 1.88 (stable); C99 (swisseph sources) + `swisseph` C library (Git submodule, `vendor/swisseph/`); Rust `std` only (no external crates for this feature) (001-infrastructure-tooling-setup)
 
@@ -34,9 +36,9 @@ cargo test [ONLY COMMANDS FOR ACTIVE TECHNOLOGIES][ONLY COMMANDS FOR ACTIVE TECH
 Rust 1.88 (stable); C99 (swisseph sources): Follow standard conventions
 
 ## Recent Changes
+- 010-vimsottari-ui: Added TypeScript (strict mode), React 18 + Material UI (MUI) v6+ — `Accordion`, `AccordionSummary`, `AccordionDetails`, `Typography`, `Box`, `Stack`, `Alert`, `CircularProgress`
 - 009-vimsottari-dasa: Added Rust 2021 (stable toolchain) + `serde 1` + `serde_json 1` (serialization); `chrono 0.4` + `chrono-tz 0.9` (date arithmetic, timezone); Swiss Ephemeris via existing C FFI — all already present in `Cargo.toml`
 - 008-horoscope-ui-polish: Added TypeScript 5.x strict; React 18.3; MUI 6.0 + React 18, MUI v6, Emotion, `@vitejs/plugin-react`, Vite 5
-- 006-horoscope-positions: Added Rust 2021 (stable toolchain) + `serde 1` + `serde_json 1` (already present); `chrono` + `chrono-tz` (new — IANA timezone conversion); Swiss Ephemeris via existing C FFI
 
 
 <!-- MANUAL ADDITIONS START -->
