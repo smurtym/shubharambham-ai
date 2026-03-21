@@ -77,10 +77,26 @@ pub const STRINGS: &[(&str, &str)] = &[
     ("nakshatra.25", "Purva Bhadrapada"),
     ("nakshatra.26", "Uttara Bhadrapada"),
     ("nakshatra.27", "Revati"),
+    // Dasa labels (2)
+    ("dasa.maha",  "Mahadasa"),
+    ("dasa.antar", "Antardasa"),
+    // Month names (12)
+    ("month.1",  "January"),
+    ("month.2",  "February"),
+    ("month.3",  "March"),
+    ("month.4",  "April"),
+    ("month.5",  "May"),
+    ("month.6",  "June"),
+    ("month.7",  "July"),
+    ("month.8",  "August"),
+    ("month.9",  "September"),
+    ("month.10", "October"),
+    ("month.11", "November"),
+    ("month.12", "December"),
 ];
 
 // SC-005 compile-time completeness check (T025)
 const _: () = assert!(
-    STRINGS.len() == 71,
-    "en.rs must contain exactly 71 locale keys (SC-005)"
+    STRINGS.len() == 85,
+    "en.rs must contain exactly 85 locale keys (SC-005)"
 );

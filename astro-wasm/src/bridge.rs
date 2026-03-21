@@ -86,6 +86,10 @@ pub extern "C" fn bridge(
             let json = engines::horoscope::execute(input);
             write_json(&json, output_ptr, output_max_len)
         },
+        "vimsottari_dasa"      => {
+            let json = engines::vimsottari::execute(input);
+            write_json(&json, output_ptr, output_max_len)
+        },
         _ => write_error(&format!("unknown operation: {op}"), -1, output_ptr, output_max_len),
     }
 }

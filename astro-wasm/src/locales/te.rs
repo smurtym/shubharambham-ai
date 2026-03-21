@@ -77,4 +77,26 @@ pub const STRINGS: &[(&str, &str)] = &[
     ("nakshatra.25", "పూర్వభాద్ర"),
     ("nakshatra.26", "ఉత్తరభాద్ర"),
     ("nakshatra.27", "రేవతి"),
+    // Dasa labels (2)
+    ("dasa.maha",  "మహాదశ"),
+    ("dasa.antar", "అంతర్దశ"),
+    // Month names (12)
+    ("month.1",  "జనవరి"),
+    ("month.2",  "ఫిబ్రవరి"),
+    ("month.3",  "మార్చి"),
+    ("month.4",  "ఏప్రిల్"),
+    ("month.5",  "మే"),
+    ("month.6",  "జూన్"),
+    ("month.7",  "జూలై"),
+    ("month.8",  "ఆగస్టు"),
+    ("month.9",  "సెప్టెంబర్"),
+    ("month.10", "అక్టోబర్"),
+    ("month.11", "నవంబర్"),
+    ("month.12", "డిసెంబర్"),
 ];
+
+// compile-time completeness check
+const _: () = assert!(
+    STRINGS.len() == 85,
+    "te.rs must contain exactly 85 locale keys"
+);
