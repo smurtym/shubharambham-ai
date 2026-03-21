@@ -46,12 +46,15 @@ pub struct HoroscopeRequest {
     pub lang:       String,
 }
 
-/// One celestial body's complete sidereal position (15 fields per FR-007/FR-008).
+/// One celestial body's complete sidereal position (FR-007/FR-008).
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PlanetaryPosition {
     pub name:                   String,
     pub abbrev:                 String,
+    /// `None` — not applicable (Sun, Moon, Rahu, Ketu, Ascendant).
+    /// `Some(true)` — planet is in retrograde. `Some(false)` — direct motion.
+    pub is_retro:               Option<bool>,
     #[serde(serialize_with = "crate::utils::serialize_round5")]
     pub longitude:              f64,
     pub zodiac_number:          u8,
@@ -89,7 +92,7 @@ pub struct HoroscopeResponse {
 // T011 — compute_position: assemble PlanetaryPosition from a sidereal longitude
 // ---------------------------------------------------------------------------
 
-pub fn compute_position(longitude: f64, body_key: &str, lang: &str) -> PlanetaryPosition {
+pub fn compute_position(longitude: f64, body_key: &str, lang: &str, is_retro: Option<bool>) -> PlanetaryPosition {
     let (zodiac_num, deg_in_sign, minutes, seconds, nakshatra_num, pada) =
         utils::decompose_longitude(longitude);
     let navamsa_num = utils::navamsa_sign(longitude);
@@ -97,9 +100,24 @@ pub fn compute_position(longitude: f64, body_key: &str, lang: &str) -> Planetary
     let sign_key = SIGN_KEYS[(zodiac_num - 1) as usize];
     let nav_key  = SIGN_KEYS[(navamsa_num - 1) as usize];
 
+    let base_name   = get_string(&format!("planet.{body_key}"), lang);
+    let base_abbrev = get_string(&format!("planet.abbrev.{body_key}"), lang);
+
+    let (name, abbrev) = match is_retro {
+        Some(true) => {
+            let retro = get_string("planet.retro", lang);
+            (
+                format!("{base_name} ({retro})"),
+                format!("({base_abbrev})"),
+            )
+        }
+        _ => (base_name.to_string(), base_abbrev.to_string()),
+    };
+
     PlanetaryPosition {
-        name:                  get_string(&format!("planet.{body_key}"), lang).to_string(),
-        abbrev:                get_string(&format!("planet.abbrev.{body_key}"), lang).to_string(),
+        name,
+        abbrev,
+        is_retro,
         longitude,
         zodiac_number:         zodiac_num,
         zodiac_sign:           get_string(&format!("sign.{sign_key}"), lang).to_string(),
@@ -155,23 +173,35 @@ pub fn execute(request: &str) -> String {
         swe_wrappers::swe_set_sid_mode(SE_SIDM_TRUE_CITRA, 0.0, 0.0);
     }
 
-    // T012 — Compute the 7 classical planets
+    // T012 — Sun and Moon: always direct, is_retro = None
     let mut planets: BTreeMap<String, PlanetaryPosition> = BTreeMap::new();
 
-    let bodies: &[(&str, i32)] = &[
-        ("Sun",     SE_SUN),
-        ("Moon",    SE_MOON),
+    let direct_bodies: &[(&str, i32)] = &[
+        ("Sun",  SE_SUN),
+        ("Moon", SE_MOON),
+    ];
+    for (key, body_id) in direct_bodies {
+        match swe_wrappers::calc_planet(jd, *body_id) {
+            Ok(lon)  => { planets.insert(key.to_string(), compute_position(lon, key, &req.lang, None)); }
+            Err(e)   => {
+                let msg = e.replace('"', "\\\"");
+                return format!("{{\"error\":\"calc_planet({key}) failed: {msg}\"}}");
+            }
+        }
+    }
+
+    // T012 — Five planets with retrograde detection
+    let retro_bodies: &[(&str, i32)] = &[
         ("Mars",    SE_MARS),
         ("Mercury", SE_MERCURY),
         ("Jupiter", SE_JUPITER),
         ("Venus",   SE_VENUS),
         ("Saturn",  SE_SATURN),
     ];
-
-    for (key, body_id) in bodies {
-        match swe_wrappers::calc_planet(jd, *body_id) {
-            Ok(lon)  => {
-                planets.insert(key.to_string(), compute_position(lon, key, &req.lang));
+    for (key, body_id) in retro_bodies {
+        match swe_wrappers::calc_planet_retro(jd, *body_id) {
+            Ok((lon, is_retro)) => {
+                planets.insert(key.to_string(), compute_position(lon, key, &req.lang, Some(is_retro)));
             }
             Err(e) => {
                 let msg = e.replace('"', "\\\"");
@@ -180,7 +210,7 @@ pub fn execute(request: &str) -> String {
         }
     }
 
-    // T013 — Rahu (True Node) and Ketu (derived: Rahu + 180°)
+    // T013 — Rahu (True Node) and Ketu (derived: Rahu + 180°); is_retro = None
     let rahu_lon = match swe_wrappers::calc_planet(jd, SE_TRUE_NODE) {
         Ok(lon)  => lon,
         Err(e)   => {
@@ -189,10 +219,10 @@ pub fn execute(request: &str) -> String {
         }
     };
     let ketu_lon = utils::normalize_degrees(rahu_lon + 180.0);
-    planets.insert("Rahu".to_string(), compute_position(rahu_lon, "Rahu", &req.lang));
-    planets.insert("Ketu".to_string(), compute_position(ketu_lon, "Ketu", &req.lang));
+    planets.insert("Rahu".to_string(), compute_position(rahu_lon, "Rahu", &req.lang, None));
+    planets.insert("Ketu".to_string(), compute_position(ketu_lon, "Ketu", &req.lang, None));
 
-    // T014 — Ascendant via swe_houses_ex (FR-005)
+    // T014 — Ascendant via swe_houses_ex (FR-005); is_retro = None
     let asc_lon = match swe_wrappers::calc_ascendant(jd, lat, lng) {
         Ok(lon)  => lon,
         Err(e)   => {
@@ -200,7 +230,7 @@ pub fn execute(request: &str) -> String {
             return format!("{{\"error\":\"calc_ascendant failed: {msg}\"}}");
         }
     };
-    planets.insert("Ascendant".to_string(), compute_position(asc_lon, "Ascendant", &req.lang));
+    planets.insert("Ascendant".to_string(), compute_position(asc_lon, "Ascendant", &req.lang, None));
 
     // T021 — City context in response (FR-009 / US3)
     // lang fallback: try requested lang first, then "en", then canonical_name

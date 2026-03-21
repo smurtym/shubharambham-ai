@@ -103,6 +103,37 @@ pub fn calc_planet(jd: f64, body: i32) -> Result<f64, String> {
     }
     Ok(xx[0])
 }
+
+/// Compute the sidereal ecliptic longitude **and retrograde status** of a planet.
+///
+/// Returns `(longitude, is_retrograde)`. `is_retrograde` is true when the
+/// planet's ecliptic longitude speed (`xx[3]`) is negative (apparent motion).
+/// Caller MUST call `swe_set_sid_mode` before this function.
+pub fn calc_planet_retro(jd: f64, body: i32) -> Result<(f64, bool), String> {
+    let mut xx = [0.0_f64; 6];
+    let mut serr = [0_u8 as c_char; 256];
+    let iflag = SEFLG_SIDEREAL | SEFLG_TRUEPOS | SEFLG_SPEED | SEFLG_NONUT;
+    let (ret, msg) = unsafe {
+        let r = swe_calc_ut(
+            jd,
+            body as c_int,
+            iflag,
+            xx.as_mut_ptr(),
+            serr.as_mut_ptr(),
+        );
+        let m = CStr::from_ptr(serr.as_mut_ptr()).to_string_lossy().into_owned();
+        (r, m)
+    };
+    if !msg.is_empty() {
+        println!("swe_calc_ut warning: {msg}");
+    }
+    if ret < 0 || (ret & SEFLG_SIDEREAL) == 0 || (ret & SEFLG_SWIEPH) == 0 {
+        return Err(msg);
+    }
+    // xx[3] = ecliptic longitude speed (deg/day); negative means retrograde
+    Ok((xx[0], xx[3] < 0.0))
+}
+
 /// Compute the sidereal Ascendant degree using the Whole Sign house system.
 ///
 /// Caller MUST call `swe_set_sid_mode(SE_SIDM_TRUE_CITRA, 0.0, 0.0)` before

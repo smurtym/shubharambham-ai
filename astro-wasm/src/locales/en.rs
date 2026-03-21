@@ -90,6 +90,8 @@ pub const STRINGS: &[(&str, &str)] = &[
     ("planet.dasa.Saturn",  "Saturn"),
     ("planet.dasa.Rahu",    "Rahu"),
     ("planet.dasa.Ketu",    "Ketu"),
+    // Retrograde marker
+    ("planet.retro", "R"),
     // Month names (12)
     ("month.1",  "January"),
     ("month.2",  "February"),
@@ -107,6 +109,6 @@ pub const STRINGS: &[(&str, &str)] = &[
 
 // SC-005 compile-time completeness check (T025)
 const _: () = assert!(
-    STRINGS.len() == 94,
-    "en.rs must contain exactly 94 locale keys (SC-005)"
+    STRINGS.len() == 95,
+    "en.rs must contain exactly 95 locale keys (SC-005)"
 );

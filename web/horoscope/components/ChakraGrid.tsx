@@ -111,7 +111,9 @@ export default function ChakraGrid({ planets, title, navamsa = false }: ChakraGr
                     alignItems: 'center',
                     justifyContent: 'center',
                     lineHeight: 1,
-                    fontSize: { xs: '1.0rem', sm: '1.1rem' },
+                    fontSize: abbrev.length > 3
+                      ? { xs: '0.85rem', sm: '0.9rem' }
+                      : { xs: '0.85rem', sm: '0.9rem' },
                     fontWeight: isLagna && i === 0 ? 700 : 400,
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',

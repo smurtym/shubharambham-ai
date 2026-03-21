@@ -108,7 +108,7 @@ const te: UIStrings = {
   timezone: 'కాల మండలం(టైమ్ జోన్)',
   bodyLongitudes: 'గ్రహ స్ఫుటలు',
   bodyCol: 'గ్రహం',
-  longitudeCol: 'స్ఫుటం',
+  longitudeCol: 'స్ఫుట',
   nakshatraCol: 'నక్షత్రం',
   padaCol: 'పాదం',
   rasiCol: 'రాశి',
