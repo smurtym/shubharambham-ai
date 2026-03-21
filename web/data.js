@@ -25,6 +25,26 @@ function listCities(lang) {
 }
 
 /**
+ * Compute Vimsottari Dasa periods for a given city, local time, and language.
+ *
+ * @param {number} cityId     - 32-bit city identifier
+ * @param {string} localTime  - Local datetime in "YYYY-MM-DDTHH:MM:SS" format
+ * @param {string} lang       - Language code, e.g. "en" or "te"
+ * @returns {Object} VimsottariResponse with a `periods` array of Mahadasa entries
+ * @throws {Error} if the bridge returns an error response
+ */
+function getVimsottariDasa(cityId, localTime, lang) {
+  const response = bridge(
+    'vimsottari_dasa',
+    JSON.stringify({ operation: 'vimsottari_dasa', cityId: cityId, localTime: localTime, lang: lang })
+  );
+  if (response.error) {
+    throw new Error(response.error);
+  }
+  return response;
+}
+
+/**
  * Compute Vedic horoscope positions for a given city, local time, and language.
  *
  * @param {number} cityId     - 32-bit city identifier

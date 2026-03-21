@@ -26,7 +26,10 @@
     <button type="submit" id="submit">Calculate</button>
   </form>
 
+  <h2>Horoscope Positions</h2>
   <pre id="horoscope-result"></pre>
+  <h2>Vimsottari Dasa</h2>
+  <pre id="vimsottari-result"></pre>
 
   <script>
     document.getElementById('horoscope-form').addEventListener('submit', function (e) {
@@ -38,22 +41,31 @@
         submitBtn.disabled = false;
         return;
       }
-      var localTime = document.getElementById('local-time').value + ':00';
-      var lang      = document.getElementById('lang').value;
-      var submitBtn = document.getElementById('submit');
-      var resultEl  = document.getElementById('horoscope-result');
+      var localTime    = document.getElementById('local-time').value + ':00';
+      var lang         = document.getElementById('lang').value;
+      var submitBtn    = document.getElementById('submit');
+      var horoEl       = document.getElementById('horoscope-result');
+      var vimsEl       = document.getElementById('vimsottari-result');
 
       submitBtn.disabled = true;
-      resultEl.textContent = '';
+      horoEl.textContent = '';
+      vimsEl.textContent = '';
 
       try {
-        var result = getHoroscopePositions(cityId, localTime, lang);
-        resultEl.textContent = JSON.stringify(result, null, 2);
+        var horoResult = getHoroscopePositions(cityId, localTime, lang);
+        horoEl.textContent = JSON.stringify(horoResult, null, 2);
       } catch (err) {
-        resultEl.textContent = 'Error: ' + err.message;
-      } finally {
-        submitBtn.disabled = false;
+        horoEl.textContent = 'Error: ' + err.message;
       }
+
+      try {
+        var vimsResult = getVimsottariDasa(cityId, localTime, lang);
+        vimsEl.textContent = JSON.stringify(vimsResult, null, 2);
+      } catch (err) {
+        vimsEl.textContent = 'Error: ' + err.message;
+      }
+
+      submitBtn.disabled = false;
     });
   </script>
 
