@@ -98,6 +98,44 @@ export interface CityModalProps {
   onClose: () => void;
 }
 
+// ─── Vimsottari Dasa types ────────────────────────────────────────────────────
+
+export interface AntardasaEntry {
+  lord:      string;   // canonical English planet key (e.g. "Venus")
+  label:     string;   // translated: "{planet_name} {dasa.antar}"
+  startDate: string;   // "YYYY MonthName DD" — month in requested lang
+  endDate:   string;   // "YYYY MonthName DD"
+  isCurrent: boolean;  // true if today falls within startDate..endDate; set by Rust
+}
+
+export interface MahadasaEntry {
+  lord:       string;
+  label:      string;           // translated: "{planet_name} {dasa.maha}"
+  startDate:  string;
+  endDate:    string;
+  isCurrent:  boolean;          // true if any child AntardasaEntry.isCurrent; set by Rust
+  antardasas: AntardasaEntry[];
+}
+
+export interface VimsottariResponse {
+  lang:     string;
+  cityId:   number;
+  cityName: string;
+  region1:  string;
+  region2:  string;
+  lat:      number;
+  lng:      number;
+  timezone: string;
+  periods:  MahadasaEntry[];
+}
+
+export interface VimsottariPanelProps {
+  dasa:    VimsottariResponse | null;
+  loading: boolean;
+  error:   string | null;
+  lang:    Lang;
+}
+
 export interface LanguageSelectorProps {
   current: Lang;
 }

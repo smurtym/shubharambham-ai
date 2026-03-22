@@ -1,9 +1,10 @@
-import type { Lang, CityRecord, HoroscopeResponse, WasmError } from './types';
+import type { Lang, CityRecord, HoroscopeResponse, WasmError, VimsottariResponse } from './types';
 
 const BUF_LIST_CITIES = 524288;   // 512 KiB
 const BUF_HOROSCOPE   = 65536;    //  64 KiB
+const BUF_VIMSOTTARI  = BUF_HOROSCOPE; // ~11 KiB max; alias allows independent tuning later
 
-function bridge(op: string, input: object): object {
+function bridge(op: string, input: object, bufSize: number = BUF_HOROSCOPE): object {
   const enc = new TextEncoder();
   const opBytes    = enc.encode(op + '\0');
   const inputBytes = enc.encode(JSON.stringify(input) + '\0');
@@ -13,7 +14,6 @@ function bridge(op: string, input: object): object {
   window.Module.HEAPU8.set(opBytes,    opPtr);
   window.Module.HEAPU8.set(inputBytes, inPtr);
 
-  const bufSize = op === 'list_cities' ? BUF_LIST_CITIES : BUF_HOROSCOPE;
   const outPtr  = window.Module._malloc(bufSize);
 
   try {
@@ -41,7 +41,7 @@ function bridge(op: string, input: object): object {
 }
 
 export async function listCities(lang: Lang): Promise<{ cities: CityRecord[] }> {
-  return bridge('list_cities', { operation: 'list_cities', lang }) as { cities: CityRecord[] };
+  return bridge('list_cities', { operation: 'list_cities', lang }, BUF_LIST_CITIES) as { cities: CityRecord[] };
 }
 
 export async function getHoroscopePositions(
@@ -55,4 +55,17 @@ export async function getHoroscopePositions(
     localTime,
     lang,
   }) as HoroscopeResponse;
+}
+
+export async function getVimsottariDasa(
+  cityId: number,
+  localTime: string,
+  lang: Lang
+): Promise<VimsottariResponse> {
+  return bridge('vimsottari_dasa', {
+    operation: 'vimsottari_dasa',
+    cityId,
+    localTime,
+    lang,
+  }, BUF_VIMSOTTARI) as VimsottariResponse;
 }

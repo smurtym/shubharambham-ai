@@ -72,24 +72,28 @@ int bridge(
       "label": "Mars Mahadasa",
       "startDate": "1997 March 07",
       "endDate": "1999 January 18",
+      "isCurrent": false,
       "antardasas": [
         {
           "lord": "Venus",
           "label": "Venus Antardasa",
           "startDate": "1997 March 07",
-          "endDate": "1998 February 11"
+          "endDate": "1998 February 11",
+          "isCurrent": false
         },
         {
           "lord": "Sun",
           "label": "Sun Antardasa",
           "startDate": "1998 February 11",
-          "endDate": "1998 June 19"
+          "endDate": "1998 June 19",
+          "isCurrent": false
         },
         {
           "lord": "Moon",
           "label": "Moon Antardasa",
           "startDate": "1998 June 19",
-          "endDate": "1999 January 18"
+          "endDate": "1999 January 18",
+          "isCurrent": false
         }
       ]
     },
@@ -98,18 +102,21 @@ int bridge(
       "label": "Rahu Mahadasa",
       "startDate": "1999 January 18",
       "endDate": "2017 January 18",
+      "isCurrent": false,
       "antardasas": [
         {
           "lord": "Rahu",
           "label": "Rahu Antardasa",
           "startDate": "1999 January 18",
-          "endDate": "2001 October 01"
+          "endDate": "2001 October 01",
+          "isCurrent": false
         },
         {
           "lord": "Jupiter",
           "label": "Jupiter Antardasa",
           "startDate": "2001 October 01",
-          "endDate": "2004 February 23"
+          "endDate": "2004 February 23",
+          "isCurrent": false
         }
       ]
     }
@@ -145,6 +152,7 @@ int bridge(
 | `label` | string | Translated: `"{planet_name} {dasa.maha}"` |
 | `startDate` | string | `"YYYY MonthName DD"` with localized month name, zero-padded day |
 | `endDate` | string | Same format; equals next Mahadasa's `startDate` |
+| `isCurrent` | boolean | `true` if any child `AntardasaEntry.isCurrent` is `true`; computed by Rust at call time via `chrono::Local::now().date_naive()` |
 | `antardasas` | array | Ordered Antardasa objects (9 for full Mahadasas; ≤9 for first) |
 
 ### Antardasa object
@@ -155,6 +163,7 @@ int bridge(
 | `label` | string | Translated: `"{planet_name} {dasa.antar}"` |
 | `startDate` | string | Same date format as Mahadasa |
 | `endDate` | string | Same format; equals next Antardasa's `startDate` within Mahadasa |
+| `isCurrent` | boolean | `true` if today falls within `startDate ≤ today < endDate`; computed by Rust at call time |
 
 ---
 

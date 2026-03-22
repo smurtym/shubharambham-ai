@@ -11,9 +11,10 @@ import CityModal from './components/CityModal';
 import ChakraGrid from './components/ChakraGrid';
 import EchoPanel from './components/EchoPanel';
 import LongitudeTable from './components/LongitudeTable';
-import { getHoroscopePositions } from './astro-glue';
+import VimsottariPanel from './components/VimsottariPanel';
+import { getHoroscopePositions, getVimsottariDasa } from './astro-glue';
 import { getT } from './i18n';
-import type { Lang, HoroscopeResponse, CityRecord, WasmError } from './types';
+import type { Lang, HoroscopeResponse, VimsottariResponse, CityRecord, WasmError } from './types';
 
 function readLang(): Lang {
   const p = new URLSearchParams(window.location.search).get('lang');
@@ -31,6 +32,11 @@ export default function App() {
   const [result, setResult] = useState<HoroscopeResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Vimsottari Dasa state
+  const [dasa, setDasa] = useState<VimsottariResponse | null>(null);
+  const [dasaLoading, setDasaLoading] = useState(false);
+  const [dasaError, setDasaError] = useState<string | null>(null);
 
   // Birth form state (owned here, passed as props to BirthForm)
   const [cityId, setCityId] = useState<number | null>(null);
@@ -52,6 +58,8 @@ export default function App() {
   function clearResult() {
     setResult(null);
     setError(null);
+    setDasa(null);
+    setDasaError(null);
   }
 
   // FR-003: selecting a city stores its id and display name
@@ -80,9 +88,22 @@ export default function App() {
     setLoading(true);
     setError(null);
     setResult(null);
+    setDasa(null);
+    setDasaError(null);
     try {
       const res = await getHoroscopePositions(cityId, localTime, lang);
       setResult(res);
+      // Dasa fetch is sequential after horoscope success; its error does not affect horoscope result
+      setDasaLoading(true);
+      try {
+        const dasaRes = await getVimsottariDasa(cityId, localTime, lang);
+        setDasa(dasaRes);
+      } catch (e: unknown) {
+        const wasmErr = e as WasmError;
+        setDasaError(wasmErr?.message ?? String(e));
+      } finally {
+        setDasaLoading(false);
+      }
     } catch (e: unknown) {
       const wasmErr = e as WasmError;
       setError(wasmErr?.message ?? String(e));
@@ -175,6 +196,9 @@ export default function App() {
 
           {/* FR-009: longitude table */}
           <LongitudeTable planets={result.planets} lang={lang} />
+
+          {/* Vimsottari Dasa section */}
+          <VimsottariPanel dasa={dasa} loading={dasaLoading} error={dasaError} lang={lang} />
         </>
       )}
     </Box>

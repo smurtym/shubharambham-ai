@@ -69,6 +69,7 @@ struct AntardasaEntry {
     label:      String,
     start_date: String,
     end_date:   String,
+    is_current: bool,  // true if today falls within this Antardasa's date range; computed by Rust
 }
 
 #[derive(Serialize)]
@@ -78,6 +79,7 @@ struct MahadasaEntry {
     label:      String,
     start_date: String,
     end_date:   String,
+    is_current: bool,  // true if any child AntardasaEntry.is_current is true; derived by Rust
     antardasas: Vec<AntardasaEntry>,
 }
 
@@ -218,6 +220,9 @@ fn build_antardasas(
         let start_date = offset_to_date(birth_dt, start_offset);
         let end_date   = offset_to_date(birth_dt, end_offset);
 
+        let today = chrono::Local::now().date_naive();
+        let is_current = start_date <= today && today < end_date;
+
         let planet_name = get_string(&format!("planet.dasa.{}", antar_lord.planet_key), lang);
         let dasa_antar  = get_string("dasa.antar", lang);
         entries.push(AntardasaEntry {
@@ -225,6 +230,7 @@ fn build_antardasas(
             label:      format!("{planet_name} {dasa_antar}"),
             start_date: format_date(start_date, lang),
             end_date:   format_date(end_date, lang),
+            is_current,
         });
     }
     entries
@@ -277,11 +283,14 @@ fn build_periods(
             lang,
         );
 
+        let is_current = antardasas.iter().any(|a| a.is_current);
+
         periods.push(MahadasaEntry {
             lord:       lord.planet_key.to_string(),
             label:      format!("{planet_name} {dasa_maha}"),
             start_date: format_date(start_date, lang),
             end_date:   format_date(end_date, lang),
+            is_current,
             antardasas,
         });
 
@@ -384,4 +393,48 @@ pub fn execute(request: &str) -> String {
     serde_json::to_string(&response).unwrap_or_else(|e| {
         format!("{{\"error\":\"serialization failed: {e}\"}}")
     })
+}
+
+// ---------------------------------------------------------------------------
+// TR003 — Unit tests for is_period_current helper logic
+// ---------------------------------------------------------------------------
+
+/// Pure helper extracted for testability: true if today is within [start, end).
+fn is_period_current(start: chrono::NaiveDate, end: chrono::NaiveDate, today: chrono::NaiveDate) -> bool {
+    start <= today && today < end
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_period_current;
+    use chrono::NaiveDate;
+
+    fn d(y: i32, m: u32, day: u32) -> NaiveDate {
+        NaiveDate::from_ymd_opt(y, m, day).unwrap()
+    }
+
+    #[test]
+    fn today_in_range_is_true() {
+        assert!(is_period_current(d(2020, 1, 1), d(2025, 1, 1), d(2022, 6, 15)));
+    }
+
+    #[test]
+    fn today_equals_start_date_inclusive() {
+        assert!(is_period_current(d(2022, 6, 15), d(2025, 1, 1), d(2022, 6, 15)));
+    }
+
+    #[test]
+    fn today_equals_end_date_exclusive() {
+        assert!(!is_period_current(d(2020, 1, 1), d(2022, 6, 15), d(2022, 6, 15)));
+    }
+
+    #[test]
+    fn today_before_range_is_false() {
+        assert!(!is_period_current(d(2025, 1, 1), d(2030, 1, 1), d(2020, 6, 15)));
+    }
+
+    #[test]
+    fn today_after_range_is_false() {
+        assert!(!is_period_current(d(2010, 1, 1), d(2015, 1, 1), d(2020, 6, 15)));
+    }
 }

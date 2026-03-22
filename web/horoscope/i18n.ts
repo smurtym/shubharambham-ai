@@ -47,6 +47,8 @@ export interface UIStrings {
   minutes: string;
   ok: string;
   cancel: string;
+  // Vimsottari Dasa
+  vimsottariDasa: string;
 }
 
 const en: UIStrings = {
@@ -84,6 +86,7 @@ const en: UIStrings = {
   minutes: 'Minutes',
   ok: 'OK',
   cancel: 'Cancel',
+  vimsottariDasa: 'Vimsottari Dasa',
 };
 
 const te: UIStrings = {
@@ -121,6 +124,7 @@ const te: UIStrings = {
   minutes: 'నిమిషాలు',
   ok: 'సరే',
   cancel: 'రద్దు',
+  vimsottariDasa: 'వింశోత్తరి దశ',
 };
 
 const TRANSLATIONS: Record<Lang, UIStrings> = { en, te };
