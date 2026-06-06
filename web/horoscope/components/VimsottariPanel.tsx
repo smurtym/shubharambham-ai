@@ -68,59 +68,45 @@ export default function VimsottariPanel({ dasa, loading, error, lang }: Vimsotta
                 onChange={() => toggleAccordion(i)}
                 disableGutters
               >
-                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      width: '100%',
-                      flexWrap: 'wrap',
-                      gap: 0.5,
-                    }}
-                  >
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon />}
+                  sx={{ borderLeft: '4px solid', borderLeftColor: mahaActive ? 'primary.main' : 'grey.500', bgcolor: '#e0ecf9' }}
+                >
+                  <Box sx={{ width: '100%' }}>
                     <Typography
                       fontWeight={mahaActive ? 700 : 400}
                       color={mahaActive ? 'primary.main' : 'inherit'}
                     >
                       {maha.label}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {maha.startDate} – {maha.endDate}
-                    </Typography>
+                    <Box sx={{ display: 'flex', mt: '2px' }}>
+                      <Typography sx={{ width: '50%', pl: 2, pb: '4px' }}>{maha.startDate}</Typography>
+                      <Typography sx={{ width: '50%', pb: '4px' }}>{maha.endDate}</Typography>
+                    </Box>
                   </Box>
                 </AccordionSummary>
 
                 {/* T008/US2 — Antardasa rows */}
                 <AccordionDetails sx={{ p: 0 }}>
-                  {maha.antardasas.map(antar => {
+                  {maha.antardasas.map((antar, j) => {
                     const antarActive = antar.isCurrent;
+                    const isEven = j % 2 === 0;
                     return (
                       <Box
                         key={antar.lord}
                         sx={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          px: 2,
-                          py: 0.75,
-                          flexWrap: 'wrap',
-                          gap: 0.5,
-                          ...(antarActive && {
-                            bgcolor: 'action.selected',
-                            borderLeft: '3px solid',
-                            borderLeftColor: 'primary.main',
-                          }),
+                          bgcolor: isEven ? 'grey.100' : 'background.paper',
+                          borderLeft: antarActive ? '4px solid' : '4px solid transparent',
+                          borderLeftColor: antarActive ? 'primary.main' : 'transparent',
+                          pt: '4px',
+                          pb: '4px',
                         }}
                       >
-                        <Typography
-                          variant="body2"
-                          fontWeight={antarActive ? 600 : 400}
-                        >
-                          {antar.label}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {antar.startDate} – {antar.endDate}
-                        </Typography>
+                        <Typography sx={{ pl: 2, fontWeight: antarActive ? 600 : 400 }}>{antar.label}</Typography>
+                        <Box sx={{ display: 'flex', mt: '2px' }}>
+                          <Typography sx={{ width: '50%', pl: 2, pb: '4px' }}>{antar.startDate}</Typography>
+                          <Typography sx={{ width: '50%', pb: '4px' }}>{antar.endDate}</Typography>
+                        </Box>
                       </Box>
                     );
                   })}
