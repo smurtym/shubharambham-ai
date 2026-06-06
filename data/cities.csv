@@ -1,0 +1,191 @@
+# City data — edit this file to add/remove cities or translations.
+# This file is the single source of truth for all city data.
+# The Rust source file astro-wasm/src/data/cities.rs is auto-generated
+# from this file at build time by build.rs — do NOT edit cities.rs directly.
+#
+# Columns (all required, no commas allowed inside field values):
+#   city_id        — 32-bit zoom-15 quadkey stored as decimal u32 (base-4 quadkey digits interleaved);
+#                    see decode_city_id() in astro-wasm/src/data/mod.rs for the decoding algorithm.
+#   canonical_name — City name in English (used for logging, tests, canonicalName field)
+#   timezone       — IANA timezone (e.g. Asia/Kolkata, America/New_York)
+#   lang           — BCP-47 language code (en / te / hi / ...)
+#   city_name      — City name in this language
+#   region1        — State / province in this language
+#   region2        — Country in this language
+#   region1_order  — Sort key within a country (integer, lower = listed first)
+#   region2_order  — Sort key between countries (integer, lower = listed first)
+#
+# To ADD A CITY: append one row per language translation.
+#   All rows with the same city_id become one CityRecord.
+#   city_id is a zoom-15 base-4 quadkey (15 digits, each 0–3) parsed as a decimal integer.
+#   To compute: obtain the 15-character base-4 quadkey for the city's lat/lng at zoom 15,
+#   then read those digits as a plain decimal number (e.g. quadkey "123301331322112" → 466083476).
+#   Tools: https://labs.mapbox.com/what-the-tile/ (set zoom=15, copy quadkey, interpret as decimal).
+#   Reference implementation: decode_city_id() in astro-wasm/src/data/mod.rs.
+#
+# To ADD A LANGUAGE to an existing city: add a new row with the same city_id
+#   and the new lang code. The city will automatically appear in that language's
+#   list_cities response after the next build.
+#
+# To REMOVE A CITY or translation: delete its row(s). The next build removes it.
+
+city_id,canonical_name,timezone,lang,city_name,region1,region2,region1_order,region2_order
+465958642,Adilabad,Asia/Kolkata,te,ఆదిలాబాద్,తెలంగాణ,భారతదేశం,1,1
+466757153,Karimnagar,Asia/Kolkata,te,కరీంనగర్,తెలంగాణ,భారతదేశం,1,1
+466804776,Khammam,Asia/Kolkata,te,ఖమ్మం,తెలంగాణ,భారతదేశం,1,1
+466790015,Nalgonda,Asia/Kolkata,te,నల్గొండ,తెలంగాణ,భారతదేశం,1,1
+466049715,Nizamabad,Asia/Kolkata,te,నిజామాబాద్,తెలంగాణ,భారతదేశం,1,1
+466801318,Bhadrachalam,Asia/Kolkata,te,భద్రాచలం,తెలంగాణ,భారతదేశం,1,1
+466750935,Mancherial,Asia/Kolkata,te,మంచిర్యాల,తెలంగాణ,భారతదేశం,1,1
+466087782,Mahabubnagar,Asia/Kolkata,te,మహబూబ్‌నగర్,తెలంగాణ,భారతదేశం,1,1
+466784336,Warangal,Asia/Kolkata,te,వరంగల్,తెలంగాణ,భారతదేశం,1,1
+466083476,Hyderabad,Asia/Kolkata,te,హైదరాబాద్,తెలంగాణ,భారతదేశం,1,1
+466083476,Hyderabad,Asia/Kolkata,en,Hyderabad,Telangana,India,1,1
+466471831,Anantapur,Asia/Kolkata,te,అనంతపురం,ఆంధ్రప్రదేశ్,భారతదేశం,2,1
+466858072,Annavaram,Asia/Kolkata,te,అన్నవరం,ఆంధ్రప్రదేశ్,భారతదేశం,2,1
+467207223,Amalapuram,Asia/Kolkata,te,అమలాపురం,ఆంధ్రప్రదేశ్,భారతదేశం,2,1
+467010394,Ichchapuram,Asia/Kolkata,te,ఇచ్ఛాపురం,ఆంధ్రప్రదేశ్,భారతదేశం,2,1
+466811796,Eluru,Asia/Kolkata,te,ఏలూరు,ఆంధ్రప్రదేశ్,భారతదేశం,2,1
+467156380,Ongole,Asia/Kolkata,te,ఒంగోలు,ఆంధ్రప్రదేశ్,భారతదేశం,2,1
+467181727,Kadapa,Asia/Kolkata,te,కడప,ఆంధ్రప్రదేశ్,భారతదేశం,2,1
+466445790,Kurnool,Asia/Kolkata,te,కర్నూలు,ఆంధ్రప్రదేశ్,భారతదేశం,2,1
+466857298,Kakinada,Asia/Kolkata,te,కాకినాడ,ఆంధ్రప్రదేశ్,భారతదేశం,2,1
+467157992,Guntur,Asia/Kolkata,te,గుంటూరు,ఆంధ్రప్రదేశ్,భారతదేశం,2,1
+467280221,Chittoor,Asia/Kolkata,te,చిత్తూరు,ఆంధ్రప్రదేశ్,భారతదేశం,2,1
+467273688,Tirupati,Asia/Kolkata,te,తిరుపతి,ఆంధ్రప్రదేశ్,భారతదేశం,2,1
+466451645,Nandyal,Asia/Kolkata,te,నంద్యాల,ఆంధ్రప్రదేశ్,భారతదేశం,2,1
+467186943,Nellore,Asia/Kolkata,te,నెల్లూరు,ఆంధ్రప్రదేశ్,భారతదేశం,2,1
+467163594,Machilipatnam,Asia/Kolkata,te,మచిలిపట్నం,ఆంధ్రప్రదేశ్,భారతదేశం,2,1
+466854823,Rajahmundry,Asia/Kolkata,te,రాజమండ్రి,ఆంధ్రప్రదేశ్,భారతదేశం,2,1
+467158234,Vijayawada,Asia/Kolkata,te,విజయవాడ,ఆంధ్రప్రదేశ్,భారతదేశం,2,1
+466862975,Visakhapatnam,Asia/Kolkata,te,విశాఖపట్నం,ఆంధ్రప్రదేశ్,భారతదేశం,2,1
+466843911,Srikakulam,Asia/Kolkata,te,శ్రీకాకుళం,ఆంధ్రప్రదేశ్,భారతదేశం,2,1
+466567379,Hindupur,Asia/Kolkata,te,హిందూపురం,ఆంధ్రప్రదేశ్,భారతదేశం,2,1
+460051064,Ahmedabad,Asia/Kolkata,te,అహ్మదాబాద్,ఇతర భారత రాష్ట్రాలు,భారతదేశం,3,1
+460248366,Ujjain,Asia/Kolkata,te,ఉజ్జయిని,ఇతర భారత రాష్ట్రాలు,భారతదేశం,3,1
+461354094,Kolkata,Asia/Kolkata,te,కలకత్తా,ఇతర భారత రాష్ట్రాలు,భారతదేశం,3,1
+468003672,Kochi,Asia/Kolkata,te,కొచ్చి,ఇతర భారత రాష్ట్రాలు,భారతదేశం,3,1
+467997183,Coimbatore,Asia/Kolkata,te,కోయంబత్తూర్,ఇతర భారత రాష్ట్రాలు,భారతదేశం,3,1
+461155639,Gaya,Asia/Kolkata,te,గయ,ఇతర భారత రాష్ట్రాలు,భారతదేశం,3,1
+505964169,Guwahati,Asia/Kolkata,te,గౌహతి,ఇతర భారత రాష్ట్రాలు,భారతదేశం,3,1
+459640920,Chandigarh,Asia/Kolkata,te,చండీగఢ్,ఇతర భారత రాష్ట్రాలు,భారతదేశం,3,1
+467296443,Chennai,Asia/Kolkata,te,చెన్నై,ఇతర భారత రాష్ట్రాలు,భారతదేశం,3,1
+460084998,Jaipur,Asia/Kolkata,te,జైపూర్,ఇతర భారత రాష్ట్రాలు,భారతదేశం,3,1
+459750519,Delhi,Asia/Kolkata,te,ఢిల్లీ,ఇతర భారత రాష్ట్రాలు,భారతదేశం,3,1
+468040568,Thiruvananthapuram,Asia/Kolkata,te,తిరువనంతపురం,ఇతర భారత రాష్ట్రాలు,భారతదేశం,3,1
+461148684,Patna,Asia/Kolkata,te,పాట్నా,ఇతర భారత రాష్ట్రాలు,భారతదేశం,3,1
+465973413,Pune,Asia/Kolkata,te,పూణే,ఇతర భారత రాష్ట్రాలు,భారతదేశం,3,1
+467010580,Berhampur,Asia/Kolkata,te,బరంపురం,ఇతర భారత రాష్ట్రాలు,భారతదేశం,3,1
+466457062,Ballari,Asia/Kolkata,te,బళ్ళారి,ఇతర భారత రాష్ట్రాలు,భారతదేశం,3,1
+466576322,Bengaluru,Asia/Kolkata,te,బెంగుళూరు,ఇతర భారత రాష్ట్రాలు,భారతదేశం,3,1
+466929700,Bhubaneswar,Asia/Kolkata,te,భువనేశ్వర్,ఇతర భారత రాష్ట్రాలు,భారతదేశం,3,1
+460308544,Bhopal,Asia/Kolkata,te,భోపాల్,ఇతర భారత రాష్ట్రాలు,భారతదేశం,3,1
+466510843,Mangaluru,Asia/Kolkata,te,మంగుళూరు,ఇతర భారత రాష్ట్రాలు,భారతదేశం,3,1
+468023839,Madurai,Asia/Kolkata,te,మదురై,ఇతర భారత రాష్ట్రాలు,భారతదేశం,3,1
+465786438,Mumbai,Asia/Kolkata,te,ముంబయి,ఇతర భారత రాష్ట్రాలు,భారతదేశం,3,1
+466585463,Mysuru,Asia/Kolkata,te,మైసూర్,ఇతర భారత రాష్ట్రాలు,భారతదేశం,3,1
+466690101,Raipur,Asia/Kolkata,te,రాయ్‌పూర్,ఇతర భారత రాష్ట్రాలు,భారతదేశం,3,1
+460870197,Lucknow,Asia/Kolkata,te,లక్నో,ఇతర భారత రాష్ట్రాలు,భారతదేశం,3,1
+460966414,Varanasi,Asia/Kolkata,te,వారణాసి,ఇతర భారత రాష్ట్రాలు,భారతదేశం,3,1
+443564593,Jerusalem,Asia/Jerusalem,te,జెరుసలేం,ఇజ్రాయిల్,ఇతర ఆసియా దేశాలు,1,4
+442153819,Tel Aviv,Asia/Jerusalem,te,టెల్అవీవ్,ఇజ్రాయిల్,ఇతర ఆసియా దేశాలు,1,4
+455908155,Doha,Asia/Qatar,te,దోహా,ఖతార్,ఇతర ఆసియా దేశాలు,2,4
+507592368,Beijing,Asia/Shanghai,te,బీజింగ్,చైనా,ఇతర ఆసియా దేశాలు,3,4
+509945227,Shanghai,Asia/Shanghai,te,షాంఘై,చైనా,ఇతర ఆసియా దేశాలు,3,4
+520711458,Tokyo,Asia/Tokyo,te,టోక్యో,జపాన్,ఇతర ఆసియా దేశాలు,4,4
+505462302,Lhasa,Asia/Shanghai,te,లాసా,టిబెట్,ఇతర ఆసియా దేశాలు,5,4
+510502299,Taipei,Asia/Taipei,te,తైపి,తైవాన్,ఇతర ఆసియా దేశాలు,6,4
+512706382,Bangkok,Asia/Bangkok,te,బ్యాంకాక్,థాయ్‌లాండ్,ఇతర ఆసియా దేశాలు,7,4
+508790368,Seoul,Asia/Seoul,te,సియోల్,దక్షిణకొరియా,ఇతర ఆసియా దేశాలు,8,4
+460757948,Kathmandu,Asia/Kathmandu,te,ఖాట్మాండు,నేపాల్,ఇతర ఆసియా దేశాలు,9,4
+506077661,Dhaka,Asia/Dhaka,te,ఢాకా,బంగ్లాదేశ్,ఇతర ఆసియా దేశాలు,10,4
+455702386,Manama,Asia/Bahrain,te,మానామా,బహ్రెయిన్,ఇతర ఆసియా దేశాలు,11,4
+512142762,Yangon,Asia/Yangon,te,రంగూన్,మయన్మార్,ఇతర ఆసియా దేశాలు,12,4
+515419200,Kuala Lumpur,Asia/Kuala_Lumpur,te,కౌలాలంపూర్,మలేషియా,ఇతర ఆసియా దేశాలు,13,4
+514672205,Penang,Asia/Kuala_Lumpur,te,పెనాంగ్,మలేషియా,ఇతర ఆసియా దేశాలు,14,4
+468882479,Colombo,Asia/Colombo,te,కొలంబో,శ్రీలంక,ఇతర ఆసియా దేశాలు,15,4
+449928305,Jeddah,Asia/Riyadh,te,జెడ్డా,సౌదీ అరేబియా,ఇతర ఆసియా దేశాలు,16,4
+455700736,Dammam,Asia/Riyadh,te,దమ్మాం,సౌదీ అరేబియా,ఇతర ఆసియా దేశాలు,16,4
+455666151,Riyadh,Asia/Riyadh,te,రియాద్,సౌదీఅరేబియా,ఇతర ఆసియా దేశాలు,16,4
+456069603,Abu Dhabi,Asia/Dubai,te,అబూదాబి,యునైటెడ్ అరబ్ ఎమిరేట్స్,ఇతర ఆసియా దేశాలు,17,4
+455992417,Dubai,Asia/Dubai,te,దుబాయి,యునైటెడ్ అరబ్ ఎమిరేట్స్,ఇతర ఆసియా దేశాలు,17,4
+515560558,Singapore,Asia/Singapore,te,సింగపూర్,సింగపూర్,ఇతర ఆసియా దేశాలు,18,4
+510321608,Hong Kong,Asia/Hong_Kong,te,హాంకాంగ్,హాంకాంగ్,ఇతర ఆసియా దేశాలు,19,4
+189408951,Phoenix,America/Phoenix,te,ఫీనిక్స్,అరిజోనా,ఉత్తర అమెరికా,1,5
+234984273,Indianapolis,America/Indiana/Indianapolis,te,ఇండియానాపోలిస్,ఇండియానా,ఉత్తర అమెరికా,2,5
+212521752,Chicago,America/Chicago,te,చికాగో,ఇలెనోయి,ఉత్తర అమెరికా,3,5
+190397357,Oklahoma City,America/Chicago,te,ఓక్లహోమా సిటీ,ఓక్లహోమా,ఉత్తర అమెరికా,4,5
+162706488,Portland,America/Los_Angeles,te,పోర్ట్‌లాండ్,ఓరిగాన్,ఉత్తర అమెరికా,5,5
+235009967,Cincinnati,America/New_York,te,సిన్‌సినాటి,ఓహైయో,ఉత్తర అమెరికా,6,5
+235159513,Columbus,America/New_York,te,కొలంబస్,ఓహైయో,ఉత్తర అమెరికా,6,5
+213814293,Hartford,America/New_York,te,హాట్‌ఫోర్డ్,కనెటికట్,ఉత్తర అమెరికా,7,5
+186341307,Los Angeles,America/Los_Angeles,te,లాస్ఏంజెలెస్,కాలిఫోర్నియా,ఉత్తర అమెరికా,8,5
+185781764,San Jose,America/Los_Angeles,te,శాన్‌జోస్,కాలిఫోర్నియా,ఉత్తర అమెరికా,8,5
+185745306,San Francisco,America/Los_Angeles,te,శాన్‌ఫ్రాన్సిస్కో,కాలిఫోర్నియా,ఉత్తర అమెరికా,8,5
+185750261,Sacramento,America/Los_Angeles,te,శాక్రమెంటో,కాలిఫోర్నియా,ఉత్తర అమెరికా,8,5
+186554816,San Diego,America/Los_Angeles,te,శాన్ డియాగో,కాలిఫోర్నియా,ఉత్తర అమెరికా,8,5
+235102217,Louisville,America/Kentucky/Louisville,te,లూయివిల్,కెంటకీ,ఉత్తర అమెరికా,9,5
+212720190,Toronto,America/Toronto,te,టొరంటో,కెనడా,ఉత్తర అమెరికా,10,5
+161129961,Vancouver,America/Vancouver,te,వాంకూవర్,కెనడా,ఉత్తర అమెరికా,10,5
+213119372,Montreal,America/Toronto,te,మాంట్రియల్,కెనడా,ఉత్తర అమెరికా,10,5
+189056613,Denver,America/Denver,te,డెన్వర్,కొలరాడో,ఉత్తర అమెరికా,11,5
+235626486,Atlanta,America/New_York,te,అట్లాంటా,జార్జియా,ఉత్తర అమెరికా,12,5
+191991700,Austin,America/Chicago,te,ఆస్టిన్,టెక్సాస్,ఉత్తర అమెరికా,13,5
+190564766,Dallas,America/Chicago,te,డల్లాస్,టెక్సాస్,ఉత్తర అమెరికా,13,5
+192194967,Houston,America/Chicago,te,హ్యూస్టన్,టెక్సాస్,ఉత్తర అమెరికా,13,5
+192042469,San Antonio,America/Chicago,te,శాన్ ఆంటోనియో,టెక్సాస్,ఉత్తర అమెరికా,13,5
+235474451,Nashville,America/Chicago,te,నాష్‌విల్,టెన్నెస్సీ,ఉత్తర అమెరికా,14,5
+236029500,Wilmington,America/New_York,te,విల్మింగ్టన్,డెలవేర్,ఉత్తర అమెరికా,15,5
+235770499,Charlotte,America/New_York,te,షార్లెట్,నార్త్ కరోలినా,ఉత్తర అమెరికా,16,5
+167506940,Omaha,America/Chicago,te,ఒమెహ,నెబ్రాస్కా,ఉత్తర అమెరికా,17,5
+236012543,Newark,America/New_York,te,న్యూఎర్క్,న్యూజెర్సి,ఉత్తర అమెరికా,18,5
+235233364,Pittsburgh,America/New_York,te,పిట్స్‌బర్గ్,పెన్సెల్‌వేనియా,ఉత్తర అమెరికా,19,5
+236010142,Philadelphia,America/New_York,te,ఫిలడెల్ఫియా,పెన్సెల్‌వేనియా,ఉత్తర అమెరికా,19,5
+237422334,Tampa,America/New_York,te,టాంపా,ఫ్లోరిడా,ఉత్తర అమెరికా,20,5
+237297120,Jacksonville,America/New_York,te,జాక్సన్‌విల్,ఫ్లోరిడా,ఉత్తర అమెరికా,20,5
+213804911,Boston,America/New_York,te,బోస్టన్,మాసాచుసెట్స్,ఉత్తర అమెరికా,21,5
+167530940,Minneapolis,America/Chicago,te,మినియాపోలిస్,మినెసోటా,ఉత్తర అమెరికా,22,5
+212743960,Detroit,America/Detroit,te,డెట్రాయిట్,మిషిగన్,ఉత్తర అమెరికా,23,5
+190100460,Kansas City,America/Chicago,te,క్యాన్సాస్‌సిటి,మిస్సోరి,ఉత్తర అమెరికా,24,5
+190273072,St. Louis,America/Chicago,te,సెయింట్ లూయిస్,మిస్సోరి,ఉత్తర అమెరికా,24,5
+198244896,Mexico City,America/Mexico_City,te,మెక్సికో సిటీ,మెక్సికో,ఉత్తర అమెరికా,25,5
+235991174,Baltimore,America/New_York,te,బాల్టిమోర్,మేరిలాండ్,ఉత్తర అమెరికా,26,5
+188745607,Salt Lake City,America/Denver,te,సాల్ట్‌లేక్‌సిటి,యుటా,ఉత్తర అమెరికా,27,5
+236099384,Richmond,America/New_York,te,రిచ్‌మండ్,వర్జీనియా,ఉత్తర అమెరికా,28,5
+162580619,Seattle,America/Los_Angeles,te,సియాటెల్,వాషింగ్టన్,ఉత్తర అమెరికా,29,5
+236014899,New York,America/New_York,te,న్యూయార్క్,న్యూయార్క్,ఉత్తర అమెరికా,30,5
+235990011,Washington DC,America/New_York,te,వాషింగ్టన్ డిసి,వాషింగ్టన్ డిసి,ఉత్తర అమెరికా,31,5
+414284046,Vienna,Europe/Vienna,te,వియన్నా,ఆస్ట్రియా,యూరోప్,1,6
+231963315,Dublin,Europe/Dublin,te,డబ్లిన్,ఐర్లాండ్,యూరోప్,2,6
+412285592,Berlin,Europe/Berlin,te,బెర్లిన్,జర్మని,యూరోప్,3,6
+414198220,Munich,Europe/Berlin,te,మ్యూనిక్,జర్మని,యూరోప్,3,6
+412033940,Frankfurt,Europe/Berlin,te,ఫ్రాంక్‌ఫర్ట్,జర్మని,యూరోప్,3,6
+413471247,Stuttgart,Europe/Berlin,te,స్టుట్‌గార్ట్,జర్మని,యూరోప్,3,6
+412095905,Copenhagen,Europe/Copenhagen,te,కోపెన్‌హాగన్,డెన్మార్క్,యూరోప్,4,6
+405232521,Oslo,Europe/Oslo,te,ఓస్లో,నార్వే,యూరోప్,5,6
+411649876,Amsterdam,Europe/Amsterdam,te,ఆమ్‌స్టర్‌డ్యామ్,నెదర్లాండ్,యూరోప్,6,6
+411656990,Rotterdam,Europe/Amsterdam,te,రోటర్‌డామ్,నెదర్లాండ్స్,యూరోప్,6,6
+411650743,The Hague,Europe/Amsterdam,te,ది హేగ్,నెదర్లాండ్స్,యూరోప్,6,6
+257052810,Lisbon,Europe/Lisbon,te,లిస్బన్,పోర్చుగల్,యూరోప్,7,6
+412949882,Warsaw,Europe/Warsaw,te,వార్సా,పోలాండ్,యూరోప్,8,6
+409097255,Helsinki,Europe/Helsinki,te,హెల్సింకి,ఫిన్‌లాండ్,యూరోప్,9,6
+413159824,Paris,Europe/Paris,te,పారిస్,ఫ్రాన్స్,యూరోప్,10,6
+232205714,Manchester,Europe/London,te,మాంచెస్టర్,యునైటెడ్ కింగ్‌డమ్,యూరోప్,11,6
+232638101,Reading,Europe/London,te,రెడింగ్,యునైటెడ్ కింగ్‌డమ్,యూరోప్,11,6
+226425134,Edinburgh,Europe/London,te,ఎడిన్‌బర్గ్,యునైటెడ్ కింగ్‌డమ్,యూరోప్,11,6
+232641982,London,Europe/London,te,లండన్,యునైటెడ్ కింగ్‌డమ్,యూరోప్,11,6
+416355362,Moscow,Europe/Moscow,te,మాస్కో,రష్యా,యూరోప్,12,6
+257189129,Madrid,Europe/Madrid,te,మాడ్రిడ్,స్పెయిన్,యూరోప్,13,6
+406232294,Stockholm,Europe/Stockholm,te,స్టాక్‌హోం,స్వీడన్,యూరోప్,14,6
+887161941,Perth,Australia/Perth,te,పెర్త్,ఆస్ట్రేలియా,ఆస్ట్రేలియా/న్యూజిలాండ్,1,7
+900579568,Melbourne,Australia/Melbourne,te,మెల్‌బోర్న్,ఆస్ట్రేలియా,ఆస్ట్రేలియా/న్యూజిలాండ్,1,7
+900853935,Sydney,Australia/Sydney,te,సిడ్నీ,ఆస్ట్రేలియా,ఆస్ట్రేలియా/న్యూజిలాండ్,1,7
+905709221,Auckland,Pacific/Auckland,te,ఆక్లాండ్,న్యూజిలాండ్,ఆస్ట్రేలియా/న్యూజిలాండ్,2,7
+442868780,Cairo,Africa/Cairo,te,కైరో,ఈజిప్ట్,ఆఫ్రికా,1,8
+810625845,Nairobi,Africa/Nairobi,te,నైరోబి,కెన్యా,ఆఫ్రికా,2,8
+817161015,Cape Town,Africa/Johannesburg,te,కేప్‌టౌన్,దక్షిణాఫ్రికా,ఆఫ్రికా,3,8
+447013960,Abuja,Africa/Lagos,te,అబూజ,నైజీరియా,ఆఫ్రికా,4,8
+446926619,Lagos,Africa/Lagos,te,లాగోస్,నైజీరియా,ఆఫ్రికా,4,8
+619121943,Buenos Aires,America/Argentina/Buenos_Aires,te,బ్యూనొస్ఏరీజ్,అర్జంటినా,దక్షిణ అమెరికా,1,9
+615831215,Santiago,America/Santiago,te,శాంటియాగో,చిలి,దక్షిణ అమెరికా,2,9
+617978944,Sao Paulo,America/Sao_Paulo,te,సౌపౌలో,బ్రెజిల్,దక్షిణ అమెరికా,3,9

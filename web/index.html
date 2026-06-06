@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shubharambham</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Shubharambham</h1>
+  <p>Work in Progress</p>
+
+  <form id="horoscope-form">
+    <label for="city-id">City:</label>
+    <select id="city-id"><option value="">Loading cities…</option></select>
+
+    <label for="local-time">Local Date &amp; Time:</label>
+    <input type="datetime-local" id="local-time" value="1961-10-28T07:30">
+
+    <label for="lang">Language:</label>
+    <select id="lang">
+      <option value="en">English</option>
+      <option value="te">తెలుగు</option>
+    </select>
+
+    <button type="submit" id="submit">Calculate</button>
+  </form>
+
+  <h2>Horoscope Positions</h2>
+  <pre id="horoscope-result"></pre>
+  <h2>Vimsottari Dasa</h2>
+  <pre id="vimsottari-result"></pre>
+
+  <script>
+    document.getElementById('horoscope-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      var cityId    = parseInt(document.getElementById('city-id').value, 10);
+      if (isNaN(cityId)) {
+        resultEl.textContent = 'Error: please select a city.';
+        submitBtn.disabled = false;
+        return;
+      }
+      var localTime    = document.getElementById('local-time').value + ':00';
+      var lang         = document.getElementById('lang').value;
+      var submitBtn    = document.getElementById('submit');
+      var horoEl       = document.getElementById('horoscope-result');
+      var vimsEl       = document.getElementById('vimsottari-result');
+
+      submitBtn.disabled = true;
+      horoEl.textContent = '';
+      vimsEl.textContent = '';
+
+      try {
+        var horoResult = getHoroscopePositions(cityId, localTime, lang);
+        horoEl.textContent = JSON.stringify(horoResult, null, 2);
+      } catch (err) {
+        horoEl.textContent = 'Error: ' + err.message;
+      }
+
+      try {
+        var vimsResult = getVimsottariDasa(cityId, localTime, lang);
+        vimsEl.textContent = JSON.stringify(vimsResult, null, 2);
+      } catch (err) {
+        vimsEl.textContent = 'Error: ' + err.message;
+      }
+
+      submitBtn.disabled = false;
+    });
+  </script>
+
+  <script src="astro-glue.js"></script>
+  <script src="data.js"></script>
+  <script src="components.js"></script>
+  <script src="astro.js"></script>
+  <script>
+    function populateCityDropdown(lang) {
+      var select = document.getElementById('city-id');
+      var prevId = select.value;
+      try {
+        var cities = listCities(lang);
+        select.innerHTML = '';
+        cities.forEach(function (city) {
+          var opt = document.createElement('option');
+          opt.value = city.cityId;
+          opt.textContent = city.cityName + ', ' + city.region1 + ', ' + city.region2;
+          select.appendChild(opt);
+        });
+        // Restore previous selection if still present in new language list
+        if (prevId && select.querySelector('option[value="' + prevId + '"]')) {
+          select.value = prevId;
+        }
+      } catch (err) {
+        select.innerHTML = '<option value="">Failed to load cities</option>';
+        console.error('populateCityDropdown:', err);
+      }
+    }
+
+    document.addEventListener('wasm-ready', function () {
+      var lang = document.getElementById('lang').value;
+      populateCityDropdown(lang);
+    });
+
+    document.getElementById('lang').addEventListener('change', function () {
+      populateCityDropdown(this.value);
+    });
+  </script>
+</body>
+</html>

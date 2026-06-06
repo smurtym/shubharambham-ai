@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Horoscope — Shubharambham</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;700&family=Noto+Sans+Telugu:wght@400;500;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div id="root"></div>
+  <script>
+    window.Module = {
+      locateFile: function(path) {
+        // astro.data / astro.wasm live one level up from the horoscope/ page
+        return '../' + path;
+      },
+      onRuntimeInitialized: function () {
+        document.dispatchEvent(new Event('wasm-ready'));
+      }
+    };
+  </script>
+  <script src="/astro.js"></script>
+  <script type="module" src="./main.tsx"></script>
+</body>
+</html>

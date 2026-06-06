@@ -1,0 +1,39 @@
+# Ephemeris data files — download manually, never commit (large binaries)
+/ephe/
+
+# Build outputs
+/dist/
+/lib/
+/build/
+
+# Rust / Cargo
+/astro-wasm/target/
+/ephe-test/target/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.idea/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.*
+
+# npm
+node_modules/
+
+# Vite
+.vite/
+
+# Playwright
+playwright-report/
+test-results/
+
+# WASM build artifacts (Emscripten output in public/)
+public/astro.js
+public/astro.wasm
+public/astro.data
