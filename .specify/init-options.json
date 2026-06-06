@@ -1,9 +1,10 @@
 {
-  "ai": "copilot",
+  "ai": "claude",
   "ai_commands_dir": null,
-  "ai_skills": false,
+  "ai_skills": true,
   "here": true,
+  "integration": "claude",
   "preset": null,
   "script": "sh",
-  "speckit_version": "0.3.0"
+  "speckit_version": "0.9.5"
 }
