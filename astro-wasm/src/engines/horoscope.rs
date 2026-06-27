@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::os::raw::c_char;
 
-use crate::data::{self, cities};
+use crate::data;
 use crate::localization::get_string;
 use crate::swe_wrappers::{
     self, SE_SIDM_TRUE_CITRA, SE_SUN, SE_MOON, SE_MARS, SE_MERCURY,
@@ -149,7 +149,14 @@ pub fn execute(request: &str) -> String {
     };
 
     // T018 — city lookup; fail loudly on unknown cityId (FR-010)
-    let city = match cities::CITIES.iter().find(|c| c.city_id == req.city_id) {
+    let all_cities = match data::cities() {
+        Ok(c)  => c,
+        Err(e) => {
+            let msg = e.replace('"', "\\\"");
+            return format!("{{\"error\":\"cities.csv error: {msg}\"}}");
+        }
+    };
+    let city = match all_cities.iter().find(|c| c.city_id == req.city_id) {
         Some(c) => c,
         None    => return format!("{{\"error\":\"city not found: cityId={}\"}}",  req.city_id),
     };
@@ -158,7 +165,7 @@ pub fn execute(request: &str) -> String {
     let (lat, lng) = data::decode_city_id(req.city_id);
 
     // T019 — timezone → Julian Day (FR-002); fail on malformed localTime (FR-011)
-    let jd = match utils::local_to_jd(&req.local_time, city.timezone) {
+    let jd = match utils::local_to_jd(&req.local_time, &city.timezone) {
         Ok(jd)  => jd,
         Err(e)  => {
             let msg = e.replace('"', "\\\"");
@@ -236,8 +243,8 @@ pub fn execute(request: &str) -> String {
     // lang fallback: try requested lang first, then "en", then canonical_name
     let (city_name, region1, region2) = {
         let translation = city.translations.iter()
-            .find(|(l, _)| *l == req.lang.as_str())
-            .or_else(|| city.translations.iter().find(|(l, _)| *l == "en"))
+            .find(|(l, _)| l.as_str() == req.lang.as_str())
+            .or_else(|| city.translations.iter().find(|(l, _)| l.as_str() == "en"))
             .map(|(_, t)| t);
         match translation {
             Some(t) => (

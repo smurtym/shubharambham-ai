@@ -172,8 +172,10 @@ mod tests {
         let cities = json["cities"].as_array().expect("cities array present");
         // Derive expected count from CITIES so adding en-translated cities
         // requires no test edits.
-        let expected = crate::data::cities::CITIES.iter()
-            .filter(|r| r.translations.iter().any(|(l, _)| *l == "en"))
+        let expected = crate::data::cities()
+            .expect("cities.csv must be readable in test environment")
+            .iter()
+            .filter(|r| r.translations.iter().any(|(l, _)| l.as_str() == "en"))
             .count();
         assert_eq!(cities.len(), expected,
             "en response has {} cities but {} have en translations", cities.len(), expected);
@@ -196,14 +198,14 @@ mod tests {
             .collect();
         // Derive presence/absence expectations from CITIES rather than hardcoding
         // city names — adding a te translation to any city keeps the test correct.
-        for rec in crate::data::cities::CITIES {
-            let has_te = rec.translations.iter().any(|(l, _)| *l == "te");
+        for rec in crate::data::cities().expect("cities.csv must be readable in test environment") {
+            let has_te = rec.translations.iter().any(|(l, _)| l.as_str() == "te");
             if has_te {
-                assert!(canonical_names.contains(rec.canonical_name),
+                assert!(canonical_names.contains(rec.canonical_name.as_str()),
                     "'{}' has a te translation but is absent from the te bridge response",
                     rec.canonical_name);
             } else {
-                assert!(!canonical_names.contains(rec.canonical_name),
+                assert!(!canonical_names.contains(rec.canonical_name.as_str()),
                     "'{}' has no te translation but appears in the te bridge response",
                     rec.canonical_name);
             }

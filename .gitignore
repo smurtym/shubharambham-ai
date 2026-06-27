@@ -1,5 +1,6 @@
 # Ephemeris data files — download manually, never commit (large binaries)
-/ephe/
+/ephe/*
+!/ephe/cities.csv
 
 # Build outputs
 /dist/
