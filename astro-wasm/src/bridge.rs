@@ -1,17 +1,6 @@
 use crate::engines;
-use crate::data;
 use std::ffi::CStr;
 use std::os::raw::c_char;
-
-// ---------------------------------------------------------------------------
-// Request shapes
-// ---------------------------------------------------------------------------
-
-#[derive(serde::Deserialize)]
-struct CitiesRequest {
-    operation: String,
-    lang:      String,
-}
 
 // ---------------------------------------------------------------------------
 // Response helpers
@@ -81,7 +70,10 @@ pub extern "C" fn bridge(
                 Err(e) => write_error(&e, -3, output_ptr, output_max_len),
             }
         },
-        "list_cities"          => dispatch_list_cities(op, input, output_ptr, output_max_len),
+        "list_cities" => match engines::cities::execute(input) {
+            Ok(j)    => write_json(&j, output_ptr, output_max_len),
+            Err(msg) => write_error(&msg, -2, output_ptr, output_max_len),
+        },
         "horoscope_positions"  => {
             let json = engines::horoscope::execute(input);
             write_json(&json, output_ptr, output_max_len)
@@ -92,28 +84,6 @@ pub extern "C" fn bridge(
         },
         _ => write_error(&format!("unknown operation: {op}"), -1, output_ptr, output_max_len),
     }
-}
-
-fn dispatch_list_cities(
-    op:             &str,
-    input:          &str,
-    output_ptr:     *mut c_char,
-    output_max_len: i32,
-) -> i32 {
-    let req: CitiesRequest = match serde_json::from_str(input) {
-        Ok(r)  => r,
-        Err(e) => return write_error(&format!("JSON parse error: {e}"), -2, output_ptr, output_max_len),
-    };
-    if req.operation != op {
-        return write_error(
-            &format!("operation mismatch: op_ptr={op} body={}", req.operation),
-            -2,
-            output_ptr,
-            output_max_len,
-        );
-    }
-    let json = data::list_cities(&req.lang);
-    write_json(&json, output_ptr, output_max_len)
 }
 
 // ---------------------------------------------------------------------------
