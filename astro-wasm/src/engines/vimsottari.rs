@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 use std::os::raw::c_char;
 use chrono::Datelike as _;
 
-use crate::data;
+use crate::city_data;
 use crate::localization::get_string;
 use crate::swe_wrappers::{self, SE_SIDM_TRUE_CITRA, SE_MOON};
 use crate::utils;
@@ -333,7 +333,7 @@ pub fn execute(request: &str) -> String {
         }
     };
 
-    let all_cities = match data::cities() {
+    let all_cities = match city_data::cities() {
         Ok(c)  => c,
         Err(e) => {
             let msg = e.replace('"', "\\\"");
@@ -345,7 +345,7 @@ pub fn execute(request: &str) -> String {
         None    => return format!("{{\"error\":\"city not found: cityId={}\"}}",  req.city_id),
     };
 
-    let (lat, lng) = data::decode_city_id(req.city_id);
+    let (lat, lng) = city_data::decode_city_id(req.city_id);
 
     let jd = match utils::local_to_jd(&req.local_time, &city.timezone) {
         Ok(jd)  => jd,

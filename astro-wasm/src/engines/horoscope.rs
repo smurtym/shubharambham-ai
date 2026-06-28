@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::os::raw::c_char;
 
-use crate::data;
+use crate::city_data;
 use crate::localization::get_string;
 use crate::swe_wrappers::{
     self, SE_SIDM_TRUE_CITRA, SE_SUN, SE_MOON, SE_MARS, SE_MERCURY,
@@ -149,7 +149,7 @@ pub fn execute(request: &str) -> String {
     };
 
     // T018 — city lookup; fail loudly on unknown cityId (FR-010)
-    let all_cities = match data::cities() {
+    let all_cities = match city_data::cities() {
         Ok(c)  => c,
         Err(e) => {
             let msg = e.replace('"', "\\\"");
@@ -162,7 +162,7 @@ pub fn execute(request: &str) -> String {
     };
 
     // Resolve geographic coordinates via city ID (FR-003)
-    let (lat, lng) = data::decode_city_id(req.city_id);
+    let (lat, lng) = city_data::decode_city_id(req.city_id);
 
     // T019 — timezone → Julian Day (FR-002); fail on malformed localTime (FR-011)
     let jd = match utils::local_to_jd(&req.local_time, &city.timezone) {
