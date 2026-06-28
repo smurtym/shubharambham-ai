@@ -40,7 +40,6 @@ city_id,canonical_name,timezone,lang,city_name,region1,region2,region1_order,reg
 466087782,Mahabubnagar,Asia/Kolkata,te,మహబూబ్‌నగర్,తెలంగాణ,భారతదేశం,1,1
 466784336,Warangal,Asia/Kolkata,te,వరంగల్,తెలంగాణ,భారతదేశం,1,1
 466083476,Hyderabad,Asia/Kolkata,te,హైదరాబాద్,తెలంగాణ,భారతదేశం,1,1
-466083476,Hyderabad,Asia/Kolkata,en,Hyderabad,Telangana,India,1,1
 466471831,Anantapur,Asia/Kolkata,te,అనంతపురం,ఆంధ్రప్రదేశ్,భారతదేశం,2,1
 466858072,Annavaram,Asia/Kolkata,te,అన్నవరం,ఆంధ్రప్రదేశ్,భారతదేశం,2,1
 467207223,Amalapuram,Asia/Kolkata,te,అమలాపురం,ఆంధ్రప్రదేశ్,భారతదేశం,2,1
@@ -189,3 +188,229 @@ city_id,canonical_name,timezone,lang,city_name,region1,region2,region1_order,reg
 619121943,Buenos Aires,America/Argentina/Buenos_Aires,te,బ్యూనొస్ఏరీజ్,అర్జంటినా,దక్షిణ అమెరికా,1,9
 615831215,Santiago,America/Santiago,te,శాంటియాగో,చిలి,దక్షిణ అమెరికా,2,9
 617978944,Sao Paulo,America/Sao_Paulo,te,సౌపౌలో,బ్రెజిల్,దక్షిణ అమెరికా,3,9
+512423784,Port Blair,Asia/Kolkata,en,Port Blair,Andaman and Nicobar Islands,India,1,1
+467207223,Amalapuram,Asia/Kolkata,en,Amalapuram,Andhra Pradesh,India,2,1
+466471831,Anantapur,Asia/Kolkata,en,Anantapur,Andhra Pradesh,India,2,1
+466858072,Annavaram,Asia/Kolkata,en,Annavaram,Andhra Pradesh,India,2,1
+467280221,Chittoor,Asia/Kolkata,en,Chittoor,Andhra Pradesh,India,2,1
+466811796,Eluru,Asia/Kolkata,en,Eluru,Andhra Pradesh,India,2,1
+467157992,Guntur,Asia/Kolkata,en,Guntur,Andhra Pradesh,India,2,1
+466567379,Hindupur,Asia/Kolkata,en,Hindupur,Andhra Pradesh,India,2,1
+467010394,Ichchapuram,Asia/Kolkata,en,Ichchapuram,Andhra Pradesh,India,2,1
+467181727,Kadapa,Asia/Kolkata,en,Kadapa,Andhra Pradesh,India,2,1
+466857298,Kakinada,Asia/Kolkata,en,Kakinada,Andhra Pradesh,India,2,1
+466445790,Kurnool,Asia/Kolkata,en,Kurnool,Andhra Pradesh,India,2,1
+467163594,Machilipatnam,Asia/Kolkata,en,Machilipatnam,Andhra Pradesh,India,2,1
+466451645,Nandyal,Asia/Kolkata,en,Nandyal,Andhra Pradesh,India,2,1
+467186943,Nellore,Asia/Kolkata,en,Nellore,Andhra Pradesh,India,2,1
+467156380,Ongole,Asia/Kolkata,en,Ongole,Andhra Pradesh,India,2,1
+466854823,Rajahmundry,Asia/Kolkata,en,Rajahmundry,Andhra Pradesh,India,2,1
+466843911,Srikakulam,Asia/Kolkata,en,Srikakulam,Andhra Pradesh,India,2,1
+467273688,Tirupati,Asia/Kolkata,en,Tirupati,Andhra Pradesh,India,2,1
+467158234,Vijayawada,Asia/Kolkata,en,Vijayawada,Andhra Pradesh,India,2,1
+466862975,Visakhapatnam,Asia/Kolkata,en,Visakhapatnam,Andhra Pradesh,India,2,1
+505964169,Guwahati,Asia/Kolkata,en,Guwahati,Assam,India,3,1
+461155639,Gaya,Asia/Kolkata,en,Gaya,Bihar,India,4,1
+461148684,Patna,Asia/Kolkata,en,Patna,Bihar,India,4,1
+459640920,Chandigarh,Asia/Kolkata,en,Chandigarh,Chandigarh,India,5,1
+466646226,Bhilai,Asia/Kolkata,en,Bhilai,Chhattisgarh,India,6,1
+466690101,Raipur,Asia/Kolkata,en,Raipur,Chhattisgarh,India,6,1
+459750519,Delhi,Asia/Kolkata,en,Delhi,Delhi,India,7,1
+460051064,Ahmedabad,Asia/Kolkata,en,Ahmedabad,Gujarat,India,8,1
+465651223,Bhavnagar,Asia/Kolkata,en,Bhavnagar,Gujarat,India,8,1
+459991065,Dwaraka,Asia/Kolkata,en,Dwaraka,Gujarat,India,8,1
+459994336,Jamnagar,Asia/Kolkata,en,Jamnagar,Gujarat,India,8,1
+460039920,Rajkot,Asia/Kolkata,en,Rajkot,Gujarat,India,8,1
+465663131,Surat,Asia/Kolkata,en,Surat,Gujarat,India,8,1
+460235441,Vadodara,Asia/Kolkata,en,Vadodara,Gujarat,India,8,1
+459751283,Faridabad,Asia/Kolkata,en,Faridabad,Haryana,India,9,1
+459750575,Gurugram,Asia/Kolkata,en,Gurugram,Haryana,India,9,1
+459618184,Shimla,Asia/Kolkata,en,Shimla,Himachal Pradesh,India,10,1
+458148337,Jammu,Asia/Kolkata,en,Jammu,Jammu and Kashmir,India,11,1
+461268421,Dhanbad,Asia/Kolkata,en,Dhanbad,Jharkhand,India,12,1
+461294750,Jamshedpur,Asia/Kolkata,en,Jamshedpur,Jharkhand,India,12,1
+461257523,Ranchi,Asia/Kolkata,en,Ranchi,Jharkhand,India,12,1
+466457062,Ballari,Asia/Kolkata,en,Ballari,Karnataka,India,13,1
+466576322,Bengaluru,Asia/Kolkata,en,Bengaluru,Karnataka,India,13,1
+466382737,Hubli-Dharwad,Asia/Kolkata,en,Hubli-Dharwad,Karnataka,India,13,1
+466066339,Kalaburagi,Asia/Kolkata,en,Kalaburagi,Karnataka,India,13,1
+466510843,Mangaluru,Asia/Kolkata,en,Mangaluru,Karnataka,India,13,1
+466585463,Mysuru,Asia/Kolkata,en,Mysuru,Karnataka,India,13,1
+468003672,Kochi,Asia/Kolkata,en,Kochi,Kerala,India,14,1
+466550657,Kozhikode,Asia/Kolkata,en,Kozhikode,Kerala,India,14,1
+468040568,Thiruvananthapuram,Asia/Kolkata,en,Thiruvananthapuram,Kerala,India,14,1
+467995617,Thrissur,Asia/Kolkata,en,Thrissur,Kerala,India,14,1
+460308544,Bhopal,Asia/Kolkata,en,Bhopal,Madhya Pradesh,India,15,1
+460157554,Gwalior,Asia/Kolkata,en,Gwalior,Madhya Pradesh,India,15,1
+460250954,Indore,Asia/Kolkata,en,Indore,Madhya Pradesh,India,15,1
+461018223,Jabalpur,Asia/Kolkata,en,Jabalpur,Madhya Pradesh,India,15,1
+460248366,Ujjain,Asia/Kolkata,en,Ujjain,Madhya Pradesh,India,15,1
+465961000,Kalyan-Dombivli,Asia/Kolkata,en,Kalyan-Dombivli,Maharashtra,India,16,1
+466009747,Kolhapur,Asia/Kolkata,en,Kolhapur,Maharashtra,India,16,1
+465786438,Mumbai,Asia/Kolkata,en,Mumbai,Maharashtra,India,16,1
+466625020,Nagpur,Asia/Kolkata,en,Nagpur,Maharashtra,India,16,1
+466032465,Nanded Waghala,Asia/Kolkata,en,Nanded Waghala,Maharashtra,India,16,1
+465866738,Nashik,Asia/Kolkata,en,Nashik,Maharashtra,India,16,1
+465973413,Pune,Asia/Kolkata,en,Pune,Maharashtra,India,16,1
+466016249,Solapur,Asia/Kolkata,en,Solapur,Maharashtra,India,16,1
+506051612,Imphal,Asia/Kolkata,en,Imphal,Manipur,India,17,1
+506099135,Aizawl,Asia/Kolkata,en,Aizawl,Mizoram,India,18,1
+467010580,Berhampur,Asia/Kolkata,en,Berhampur,Odisha,India,19,1
+466929700,Bhubaneswar,Asia/Kolkata,en,Bhubaneswar,Odisha,India,19,1
+466928193,Cuttack,Asia/Kolkata,en,Cuttack,Odisha,India,19,1
+466935994,Puri,Asia/Kolkata,en,Puri,Odisha,India,19,1
+459557213,Amritsar,Asia/Kolkata,en,Amritsar,Punjab,India,20,1
+459567453,Jalandhar,Asia/Kolkata,en,Jalandhar,Punjab,India,20,1
+459571008,Ludhiana,Asia/Kolkata,en,Ludhiana,Punjab,India,20,1
+460081897,Ajmer,Asia/Kolkata,en,Ajmer,Rajasthan,India,21,1
+459703203,Bikaner,Asia/Kolkata,en,Bikaner,Rajasthan,India,21,1
+460084998,Jaipur,Asia/Kolkata,en,Jaipur,Rajasthan,India,21,1
+459896606,Jodhpur,Asia/Kolkata,en,Jodhpur,Rajasthan,India,21,1
+460119997,Kota,Asia/Kolkata,en,Kota,Rajasthan,India,21,1
+460107673,Udaipur,Asia/Kolkata,en,Udaipur,Rajasthan,India,21,1
+467296443,Chennai,Asia/Kolkata,en,Chennai,Tamil Nadu,India,22,1
+467997183,Coimbatore,Asia/Kolkata,en,Coimbatore,Tamil Nadu,India,22,1
+467317210,Cuddalore,Asia/Kolkata,en,Cuddalore,Tamil Nadu,India,22,1
+467286326,Kancheepuram,Asia/Kolkata,en,Kancheepuram,Tamil Nadu,India,22,1
+468023839,Madurai,Asia/Kolkata,en,Madurai,Tamil Nadu,India,22,1
+466612809,Salem,Asia/Kolkata,en,Salem,Tamil Nadu,India,22,1
+468016463,Tiruchirappalli,Asia/Kolkata,en,Tiruchirappalli,Tamil Nadu,India,22,1
+468053019,Tirunelveli,Asia/Kolkata,en,Tirunelveli,Tamil Nadu,India,22,1
+465958642,Adilabad,Asia/Kolkata,en,Adilabad,Telangana,India,23,1
+466801318,Bhadrachalam,Asia/Kolkata,en,Bhadrachalam,Telangana,India,23,1
+466083476,Hyderabad,Asia/Kolkata,en,Hyderabad,Telangana,India,23,1
+466757153,Karimnagar,Asia/Kolkata,en,Karimnagar,Telangana,India,23,1
+466804776,Khammam,Asia/Kolkata,en,Khammam,Telangana,India,23,1
+466087782,Mahabubnagar,Asia/Kolkata,en,Mahabubnagar,Telangana,India,23,1
+466750935,Mancherial,Asia/Kolkata,en,Mancherial,Telangana,India,23,1
+466790015,Nalgonda,Asia/Kolkata,en,Nalgonda,Telangana,India,23,1
+466049715,Nizamabad,Asia/Kolkata,en,Nizamabad,Telangana,India,23,1
+466784336,Warangal,Asia/Kolkata,en,Warangal,Telangana,India,23,1
+459796314,Agra,Asia/Kolkata,en,Agra,Uttar Pradesh,India,24,1
+459790471,Aligarh,Asia/Kolkata,en,Aligarh,Uttar Pradesh,India,24,1
+460916686,Ayodhya,Asia/Kolkata,en,Ayodhya,Uttar Pradesh,India,24,1
+460468179,Bareilly,Asia/Kolkata,en,Bareilly,Uttar Pradesh,India,24,1
+459799415,Firozabad,Asia/Kolkata,en,Firozabad,Uttar Pradesh,India,24,1
+459760332,Ghaziabad,Asia/Kolkata,en,Ghaziabad,Uttar Pradesh,India,24,1
+460932792,Gorakhpur,Asia/Kolkata,en,Gorakhpur,Uttar Pradesh,India,24,1
+459761916,Greater Noida,Asia/Kolkata,en,Greater Noida,Uttar Pradesh,India,24,1
+460868349,Kanpur,Asia/Kolkata,en,Kanpur,Uttar Pradesh,India,24,1
+460870197,Lucknow,Asia/Kolkata,en,Lucknow,Uttar Pradesh,India,24,1
+459793246,Mathura,Asia/Kolkata,en,Mathura,Uttar Pradesh,India,24,1
+459755139,Meerut,Asia/Kolkata,en,Meerut,Uttar Pradesh,India,24,1
+460464260,Moradabad,Asia/Kolkata,en,Moradabad,Uttar Pradesh,India,24,1
+459761808,Noida,Asia/Kolkata,en,Noida,Uttar Pradesh,India,24,1
+460949857,Prayagraj,Asia/Kolkata,en,Prayagraj,Uttar Pradesh,India,24,1
+459662093,Saharanpur,Asia/Kolkata,en,Saharanpur,Uttar Pradesh,India,24,1
+460966414,Varanasi,Asia/Kolkata,en,Varanasi,Uttar Pradesh,India,24,1
+460361733,Badrinath,Asia/Kolkata,en,Badrinath,Uttarakhand,India,25,1
+459656694,Dehradun,Asia/Kolkata,en,Dehradun,Uttarakhand,India,25,1
+459666020,Haridwar,Asia/Kolkata,en,Haridwar,Uttarakhand,India,25,1
+460357970,Kedarnath,Asia/Kolkata,en,Kedarnath,Uttarakhand,India,25,1
+461272678,Asansol,Asia/Kolkata,en,Asansol,West Bengal,India,26,1
+461318245,Durgapur,Asia/Kolkata,en,Durgapur,West Bengal,India,26,1
+461349586,Kharagpur,Asia/Kolkata,en,Kharagpur,West Bengal,India,26,1
+461354094,Kolkata,Asia/Kolkata,en,Kolkata,West Bengal,India,26,1
+461184083,Siliguri,Asia/Kolkata,en,Siliguri,West Bengal,India,26,1
+443564593,Jerusalem,Asia/Jerusalem,en,Jerusalem,Israel,Other Asian Countries,1,4
+442153819,Tel Aviv,Asia/Jerusalem,en,Tel Aviv,Israel,Other Asian Countries,1,4
+455908155,Doha,Asia/Qatar,en,Doha,Qatar,Other Asian Countries,2,4
+507592368,Beijing,Asia/Shanghai,en,Beijing,China,Other Asian Countries,3,4
+509945227,Shanghai,Asia/Shanghai,en,Shanghai,China,Other Asian Countries,3,4
+520711458,Tokyo,Asia/Tokyo,en,Tokyo,Japan,Other Asian Countries,4,4
+505462302,Lhasa,Asia/Shanghai,en,Lhasa,Tibet,Other Asian Countries,5,4
+510502299,Taipei,Asia/Taipei,en,Taipei,Taiwan,Other Asian Countries,6,4
+512706382,Bangkok,Asia/Bangkok,en,Bangkok,Thailand,Other Asian Countries,7,4
+508790368,Seoul,Asia/Seoul,en,Seoul,South Korea,Other Asian Countries,8,4
+460757948,Kathmandu,Asia/Kathmandu,en,Kathmandu,Nepal,Other Asian Countries,9,4
+506077661,Dhaka,Asia/Dhaka,en,Dhaka,Bangladesh,Other Asian Countries,10,4
+455702386,Manama,Asia/Bahrain,en,Manama,Bahrain,Other Asian Countries,11,4
+512142762,Yangon,Asia/Yangon,en,Yangon,Myanmar,Other Asian Countries,12,4
+515419200,Kuala Lumpur,Asia/Kuala_Lumpur,en,Kuala Lumpur,Malaysia,Other Asian Countries,13,4
+514672205,Penang,Asia/Kuala_Lumpur,en,Penang,Malaysia,Other Asian Countries,14,4
+468882479,Colombo,Asia/Colombo,en,Colombo,Sri Lanka,Other Asian Countries,15,4
+455700736,Dammam,Asia/Riyadh,en,Dammam,Saudi Arabia,Other Asian Countries,16,4
+449928305,Jeddah,Asia/Riyadh,en,Jeddah,Saudi Arabia,Other Asian Countries,16,4
+455666151,Riyadh,Asia/Riyadh,en,Riyadh,Saudi Arabia,Other Asian Countries,16,4
+456069603,Abu Dhabi,Asia/Dubai,en,Abu Dhabi,United Arab Emirates,Other Asian Countries,17,4
+455992417,Dubai,Asia/Dubai,en,Dubai,United Arab Emirates,Other Asian Countries,17,4
+515560558,Singapore,Asia/Singapore,en,Singapore,Singapore,Other Asian Countries,18,4
+510321608,Hong Kong,Asia/Hong_Kong,en,Hong Kong,Hong Kong,Other Asian Countries,19,4
+189408951,Phoenix,America/Phoenix,en,Phoenix,Arizona,North America,1,5
+234984273,Indianapolis,America/Indiana/Indianapolis,en,Indianapolis,Indiana,North America,2,5
+212521752,Chicago,America/Chicago,en,Chicago,Illinois,North America,3,5
+190397357,Oklahoma City,America/Chicago,en,Oklahoma City,Oklahoma,North America,4,5
+162706488,Portland,America/Los_Angeles,en,Portland,Oregon,North America,5,5
+235009967,Cincinnati,America/New_York,en,Cincinnati,Ohio,North America,6,5
+235159513,Columbus,America/New_York,en,Columbus,Ohio,North America,6,5
+213814293,Hartford,America/New_York,en,Hartford,Connecticut,North America,7,5
+186341307,Los Angeles,America/Los_Angeles,en,Los Angeles,California,North America,8,5
+185750261,Sacramento,America/Los_Angeles,en,Sacramento,California,North America,8,5
+186554816,San Diego,America/Los_Angeles,en,San Diego,California,North America,8,5
+185745306,San Francisco,America/Los_Angeles,en,San Francisco,California,North America,8,5
+185781764,San Jose,America/Los_Angeles,en,San Jose,California,North America,8,5
+235102217,Louisville,America/Kentucky/Louisville,en,Louisville,Kentucky,North America,9,5
+213119372,Montreal,America/Toronto,en,Montreal,Canada,North America,10,5
+212720190,Toronto,America/Toronto,en,Toronto,Canada,North America,10,5
+161129961,Vancouver,America/Vancouver,en,Vancouver,Canada,North America,10,5
+189056613,Denver,America/Denver,en,Denver,Colorado,North America,11,5
+235626486,Atlanta,America/New_York,en,Atlanta,Georgia,North America,12,5
+191991700,Austin,America/Chicago,en,Austin,Texas,North America,13,5
+190564766,Dallas,America/Chicago,en,Dallas,Texas,North America,13,5
+192194967,Houston,America/Chicago,en,Houston,Texas,North America,13,5
+192042469,San Antonio,America/Chicago,en,San Antonio,Texas,North America,13,5
+235474451,Nashville,America/Chicago,en,Nashville,Tennessee,North America,14,5
+236029500,Wilmington,America/New_York,en,Wilmington,Delaware,North America,15,5
+235770499,Charlotte,America/New_York,en,Charlotte,North Carolina,North America,16,5
+167506940,Omaha,America/Chicago,en,Omaha,Nebraska,North America,17,5
+236012543,Newark,America/New_York,en,Newark,New Jersey,North America,18,5
+236010142,Philadelphia,America/New_York,en,Philadelphia,Pennsylvania,North America,19,5
+235233364,Pittsburgh,America/New_York,en,Pittsburgh,Pennsylvania,North America,19,5
+237297120,Jacksonville,America/New_York,en,Jacksonville,Florida,North America,20,5
+237422334,Tampa,America/New_York,en,Tampa,Florida,North America,20,5
+213804911,Boston,America/New_York,en,Boston,Massachusetts,North America,21,5
+167530940,Minneapolis,America/Chicago,en,Minneapolis,Minnesota,North America,22,5
+212743960,Detroit,America/Detroit,en,Detroit,Michigan,North America,23,5
+190100460,Kansas City,America/Chicago,en,Kansas City,Missouri,North America,24,5
+190273072,St. Louis,America/Chicago,en,St. Louis,Missouri,North America,24,5
+198244896,Mexico City,America/Mexico_City,en,Mexico City,Mexico,North America,25,5
+235991174,Baltimore,America/New_York,en,Baltimore,Maryland,North America,26,5
+188745607,Salt Lake City,America/Denver,en,Salt Lake City,Utah,North America,27,5
+236099384,Richmond,America/New_York,en,Richmond,Virginia,North America,28,5
+162580619,Seattle,America/Los_Angeles,en,Seattle,Washington,North America,29,5
+236014899,New York,America/New_York,en,New York,New York,North America,30,5
+235990011,Washington DC,America/New_York,en,Washington DC,Washington DC,North America,31,5
+414284046,Vienna,Europe/Vienna,en,Vienna,Austria,Europe,1,6
+231963315,Dublin,Europe/Dublin,en,Dublin,Ireland,Europe,2,6
+412285592,Berlin,Europe/Berlin,en,Berlin,Germany,Europe,3,6
+412033940,Frankfurt,Europe/Berlin,en,Frankfurt,Germany,Europe,3,6
+414198220,Munich,Europe/Berlin,en,Munich,Germany,Europe,3,6
+413471247,Stuttgart,Europe/Berlin,en,Stuttgart,Germany,Europe,3,6
+412095905,Copenhagen,Europe/Copenhagen,en,Copenhagen,Denmark,Europe,4,6
+405232521,Oslo,Europe/Oslo,en,Oslo,Norway,Europe,5,6
+411649876,Amsterdam,Europe/Amsterdam,en,Amsterdam,Netherlands,Europe,6,6
+411656990,Rotterdam,Europe/Amsterdam,en,Rotterdam,Netherlands,Europe,6,6
+411650743,The Hague,Europe/Amsterdam,en,The Hague,Netherlands,Europe,6,6
+257052810,Lisbon,Europe/Lisbon,en,Lisbon,Portugal,Europe,7,6
+412949882,Warsaw,Europe/Warsaw,en,Warsaw,Poland,Europe,8,6
+409097255,Helsinki,Europe/Helsinki,en,Helsinki,Finland,Europe,9,6
+413159824,Paris,Europe/Paris,en,Paris,France,Europe,10,6
+226425134,Edinburgh,Europe/London,en,Edinburgh,United Kingdom,Europe,11,6
+232641982,London,Europe/London,en,London,United Kingdom,Europe,11,6
+232205714,Manchester,Europe/London,en,Manchester,United Kingdom,Europe,11,6
+232638101,Reading,Europe/London,en,Reading,United Kingdom,Europe,11,6
+416355362,Moscow,Europe/Moscow,en,Moscow,Russia,Europe,12,6
+257189129,Madrid,Europe/Madrid,en,Madrid,Spain,Europe,13,6
+406232294,Stockholm,Europe/Stockholm,en,Stockholm,Sweden,Europe,14,6
+900579568,Melbourne,Australia/Melbourne,en,Melbourne,Australia,Australia/New Zealand,1,7
+887161941,Perth,Australia/Perth,en,Perth,Australia,Australia/New Zealand,1,7
+900853935,Sydney,Australia/Sydney,en,Sydney,Australia,Australia/New Zealand,1,7
+905709221,Auckland,Pacific/Auckland,en,Auckland,New Zealand,Australia/New Zealand,2,7
+442868780,Cairo,Africa/Cairo,en,Cairo,Egypt,Africa,1,8
+810625845,Nairobi,Africa/Nairobi,en,Nairobi,Kenya,Africa,2,8
+817161015,Cape Town,Africa/Johannesburg,en,Cape Town,South Africa,Africa,3,8
+447013960,Abuja,Africa/Lagos,en,Abuja,Nigeria,Africa,4,8
+446926619,Lagos,Africa/Lagos,en,Lagos,Nigeria,Africa,4,8
+619121943,Buenos Aires,America/Argentina/Buenos_Aires,en,Buenos Aires,Argentina,South America,1,9
+615831215,Santiago,America/Santiago,en,Santiago,Chile,South America,2,9
+617978944,Sao Paulo,America/Sao_Paulo,en,Sao Paulo,Brazil,South America,3,9
