@@ -5,7 +5,7 @@ pub mod localization;
 pub mod locales;
 pub mod engines;
 pub mod bridge;
-pub mod data;
+pub mod city_data;
 
 // Re-export the single WASM entry point.
 pub use bridge::bridge;

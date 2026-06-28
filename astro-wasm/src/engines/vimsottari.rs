@@ -2,12 +2,19 @@
 //
 // Computes Mahadasa and Antardasa periods for a birth chart based on the
 // Moon's sidereal nakshatra using Swiss Ephemeris with True Chitrapaksha Ayanamsa.
+//
+// Period durations are measured by actual Sun travel in tropical degrees rather
+// than fixed calendar years. One Vimsottari year = Sun traveling 360° (one
+// tropical revolution). This means a "6-year Sun dasa" lasts exactly as long as
+// it takes the Sun to travel 6 × 360 = 2160° from the dasa's start, capturing
+// the Sun's true orbital speed variation (faster near perihelion in January,
+// slower near aphelion in July).
 
 use serde::{Deserialize, Serialize};
 use std::os::raw::c_char;
 use chrono::Datelike as _;
 
-use crate::data::{self, cities};
+use crate::city_data;
 use crate::localization::get_string;
 use crate::swe_wrappers::{self, SE_SIDM_TRUE_CITRA, SE_MOON};
 use crate::utils;
@@ -21,10 +28,9 @@ fn ephe_path() -> &'static [u8] {
 }
 
 // ---------------------------------------------------------------------------
-// T008 — Constants and DasaLord definition
+// Constants and DasaLord definition
 // ---------------------------------------------------------------------------
 
-const SOLAR_YEAR_DAYS: f64 = 365.256363;
 const NAKSHATRA_SPAN: f64 = 360.0 / 27.0; // 13.333... degrees
 
 struct DasaLord {
@@ -45,7 +51,7 @@ const DASA_SEQUENCE: [DasaLord; 9] = [
 ];
 
 // ---------------------------------------------------------------------------
-// T006 — Request struct
+// Request struct
 // ---------------------------------------------------------------------------
 
 #[derive(Deserialize)]
@@ -59,7 +65,7 @@ struct VimsottariRequest {
 }
 
 // ---------------------------------------------------------------------------
-// T007 — Response structs
+// Response structs
 // ---------------------------------------------------------------------------
 
 #[derive(Serialize)]
@@ -69,7 +75,7 @@ struct AntardasaEntry {
     label:      String,
     start_date: String,
     end_date:   String,
-    is_current: bool,  // true if today falls within this Antardasa's date range; computed by Rust
+    is_current: bool,
 }
 
 #[derive(Serialize)]
@@ -79,7 +85,7 @@ struct MahadasaEntry {
     label:      String,
     start_date: String,
     end_date:   String,
-    is_current: bool,  // true if any child AntardasaEntry.is_current is true; derived by Rust
+    is_current: bool,
     antardasas: Vec<AntardasaEntry>,
 }
 
@@ -100,22 +106,18 @@ struct VimsottariResponse {
 }
 
 // ---------------------------------------------------------------------------
-// T009 — nakshatra_to_lord_index
+// nakshatra_to_lord_index
 // ---------------------------------------------------------------------------
 
-/// Map a nakshatra number (1–27) to an index into DASA_SEQUENCE (0–8).
 fn nakshatra_to_lord_index(nakshatra_num: u8) -> usize {
     ((nakshatra_num - 1) % 9) as usize
 }
 
 // ---------------------------------------------------------------------------
-// T010 — compute_balance_fraction
+// compute_balance_fraction
 // ---------------------------------------------------------------------------
 
-/// Compute the remaining fraction of the first Mahadasa at birth.
-///
-/// Returns a value in `(0.0, 1.0]`: 1.0 if Moon is at the exact nakshatra
-/// start (full dasa remains), approaching 0.0 near the nakshatra end.
+/// Returns the fraction (0, 1] of the first Mahadasa remaining at birth.
 fn compute_balance_fraction(moon_lon: f64, nakshatra_num: u8) -> f64 {
     let nakshatra_start = (nakshatra_num as f64 - 1.0) * NAKSHATRA_SPAN;
     let nakshatra_end   = nakshatra_start + NAKSHATRA_SPAN;
@@ -123,42 +125,58 @@ fn compute_balance_fraction(moon_lon: f64, nakshatra_num: u8) -> f64 {
 }
 
 // ---------------------------------------------------------------------------
-// T011 — offset_to_date
+// advance_sun_degrees
 // ---------------------------------------------------------------------------
 
-/// Add `cumulative_days` (fractional) to `birth_dt` and return a calendar date.
+/// Find the JD at which the Sun (tropical longitude) has traveled exactly
+/// `degrees` from `start_jd`.
 ///
-/// Rationale: the birth is at a specific time-of-day (e.g. 20:34). Adding an
-/// offset of N.frac days to that datetime yields a result at approximately the
-/// same time-of-day as birth, shifted by frac×24 hours. If that shifts the
-/// time past midnight (i.e. the result time ≥ 12:00 and frac pushes it into the
-/// next calendar day), we round up to the next day.
-///
-/// Special case: cumulative_days = 0.0 (the exact birth moment) → always returns
-/// the birth date without any rounding, so period[0].startDate = the actual
-/// birth date rather than the next day.
-fn offset_to_date(
-    birth_dt:        chrono::NaiveDateTime,
-    cumulative_days: f64,
-) -> chrono::NaiveDate {
-    use chrono::TimeDelta;
-    let total_secs  = (cumulative_days * 86_400.0).round() as i64;
-    let boundary_dt = birth_dt + TimeDelta::seconds(total_secs);
-    let noon        = chrono::NaiveTime::from_hms_opt(12, 0, 0).unwrap();
-    // Only advance to the next day for non-zero offsets whose resulting time
-    // has crossed noon — the birth date (offset = 0) is always returned as-is.
-    if total_secs > 0 && boundary_dt.time() >= noon {
-        boundary_dt.date() + TimeDelta::days(1)
-    } else {
-        boundary_dt.date()
+/// Uses Newton's method against `calc_sun_longitude`. Convergence is typically
+/// 3–5 iterations; the loop cap of 30 is a safety net.
+/// Precision: converges to within 0.0001 JD (~8.6 seconds).
+fn advance_sun_degrees(start_jd: f64, degrees: f64) -> Result<f64, String> {
+    // Mean sidereal motion: ~0.9856 deg/day (sidereal year = 365.256363 days)
+    const SIDEREAL_YEAR: f64 = 365.256363;
+    const MEAN_MOTION: f64 = 360.0 / SIDEREAL_YEAR;
+
+    let start_lon = swe_wrappers::calc_planet(start_jd, swe_wrappers::SE_SUN)?;
+    let target_lon = (start_lon + degrees % 360.0).rem_euclid(360.0);
+
+    // Initial estimate via mean motion
+    let mut jd = start_jd + degrees / MEAN_MOTION;
+
+    for _ in 0..30 {
+        let lon = swe_wrappers::calc_planet(jd, swe_wrappers::SE_SUN)?;
+        // Signed angular difference, normalised to (−180, 180]
+        let mut delta = target_lon - lon;
+        if delta >  180.0 { delta -= 360.0; }
+        if delta < -180.0 { delta += 360.0; }
+        let delta_jd = delta / MEAN_MOTION;
+        jd += delta_jd;
+        if delta_jd.abs() < 0.0001 { break; }
     }
+
+    Ok(jd)
 }
 
 // ---------------------------------------------------------------------------
-// T012 — format_date
+// jd_to_local_date
 // ---------------------------------------------------------------------------
 
-/// Format a `NaiveDate` as `"YYYY MonthName DD"` with localized month name.
+/// Convert a Julian Day (UT) to the calendar date in the given IANA timezone.
+fn jd_to_local_date(jd: f64, tz: &chrono_tz::Tz) -> chrono::NaiveDate {
+    use chrono::{DateTime, Utc};
+    let unix_secs = ((jd - 2440587.5) * 86400.0).round() as i64;
+    let utc: DateTime<Utc> = DateTime::from_timestamp(unix_secs, 0)
+        .unwrap_or(DateTime::UNIX_EPOCH);
+    utc.with_timezone(tz).date_naive()
+}
+
+
+// ---------------------------------------------------------------------------
+// format_date
+// ---------------------------------------------------------------------------
+
 fn format_date(date: chrono::NaiveDate, lang: &str) -> String {
     let month_key = format!("month.{}", date.month());
     let month_name = get_string(&month_key, lang);
@@ -166,59 +184,61 @@ fn format_date(date: chrono::NaiveDate, lang: &str) -> String {
 }
 
 // ---------------------------------------------------------------------------
-// T013 — build_antardasas
+// build_antardasas
 // ---------------------------------------------------------------------------
 
-/// Build the Antardasa entries for one Mahadasa.
+/// Build Antardasa entries for one Mahadasa using sequential Sun-travel boundaries.
 ///
-/// For the first (partial) Mahadasa, `elapsed_days` is the portion of the
-/// Mahadasa that preceded birth; the function skips Antardasas that ended
-/// before birth and starts the first included one on the birth date.
+/// `mahadasa_full_degrees` — the lord's full years × 360° (used to derive each
+///   antardasa's proportional degree slice).
+/// `first_antar_start_jd` — the JD at which this Mahadasa begins (= birth JD for
+///   the first partial Mahadasa).
+/// `elapsed_degrees` — degrees of the Mahadasa already elapsed before birth; 0.0
+///   for full Mahadasas.
 ///
-/// For full Mahadasas, `elapsed_days` = 0.0 and all 9 Antardasas are included.
-///
-/// `mahadasa_start_offset` is the cumulative day offset (from birth_dt) at
-/// which the Mahadasa begins. For the first (partial) Mahadasa this is 0.0
-/// because the Mahadasa starts at birth.
+/// Antardasa boundaries are computed sequentially: each antardasa's end JD is
+/// found by advancing the Sun exactly `antar_degrees` from that antardasa's start.
 fn build_antardasas(
-    mahadasa_lord_idx:    usize,
-    mahadasa_total_days:  f64,
-    birth_dt:             chrono::NaiveDateTime,
-    mahadasa_start_offset: f64,
-    elapsed_days:         f64,
-    lang:                 &str,
-) -> Vec<AntardasaEntry> {
+    mahadasa_lord_idx:     usize,
+    mahadasa_full_degrees: f64,
+    first_antar_start_jd:  f64,
+    elapsed_degrees:       f64,
+    tz:                    &chrono_tz::Tz,
+    lang:                  &str,
+) -> Result<Vec<AntardasaEntry>, String> {
     let mut entries = Vec::new();
-    // Cumulative within the Mahadasa (from its logical start, before birth for
-    // the first partial Mahadasa).
     let mut antar_cumulative = 0.0_f64;
+    // Tracks the JD at the start of the next antardasa (updated each iteration).
+    let mut current_jd = first_antar_start_jd;
 
     for i in 0..9_usize {
         let antar_lord_idx = (mahadasa_lord_idx + i) % 9;
         let antar_lord     = &DASA_SEQUENCE[antar_lord_idx];
-        let antar_days     = mahadasa_total_days * (antar_lord.years as f64) / 120.0;
+        let antar_degrees  = mahadasa_full_degrees * (antar_lord.years as f64) / 120.0;
 
         let antar_start_in_maha = antar_cumulative;
-        let antar_end_in_maha   = antar_cumulative + antar_days;
+        let antar_end_in_maha   = antar_cumulative + antar_degrees;
         antar_cumulative = antar_end_in_maha;
 
         // Skip Antardasas that ended entirely before birth.
-        if antar_end_in_maha <= elapsed_days {
+        if antar_end_in_maha <= elapsed_degrees {
             continue;
         }
 
-        // Start offset from birth_dt for this Antardasa.
-        // The first retained Antardasa starts exactly at birth (offset = 0.0).
-        let start_offset = if antar_start_in_maha < elapsed_days {
-            // This Antardasa straddles birth — starts at birth.
-            mahadasa_start_offset
+        let (start_date, end_jd) = if antar_start_in_maha < elapsed_degrees {
+            // This Antardasa straddles birth: display start is birth; advance only
+            // the remaining degrees (from birth to the antardasa's logical end).
+            let remaining = antar_end_in_maha - elapsed_degrees;
+            let end = advance_sun_degrees(first_antar_start_jd, remaining)?;
+            (jd_to_local_date(first_antar_start_jd, tz), end)
         } else {
-            mahadasa_start_offset + (antar_start_in_maha - elapsed_days)
+            // Full antardasa: advance from the previous antardasa's end JD.
+            let end = advance_sun_degrees(current_jd, antar_degrees)?;
+            (jd_to_local_date(current_jd, tz), end)
         };
-        let end_offset = mahadasa_start_offset + (antar_end_in_maha - elapsed_days);
 
-        let start_date = offset_to_date(birth_dt, start_offset);
-        let end_date   = offset_to_date(birth_dt, end_offset);
+        let end_date = jd_to_local_date(end_jd, tz);
+        current_jd = end_jd;
 
         let today = chrono::Local::now().date_naive();
         let is_current = start_date <= today && today < end_date;
@@ -233,55 +253,55 @@ fn build_antardasas(
             is_current,
         });
     }
-    entries
+
+    Ok(entries)
 }
 
 // ---------------------------------------------------------------------------
-// T014 — build_periods
+// build_periods
 // ---------------------------------------------------------------------------
 
 /// Build the complete 9-Mahadasa sequence starting from `starting_lord_idx`.
 ///
-/// The first Mahadasa uses `balance_fraction × lord_years × SOLAR_YEAR_DAYS`.
-/// Subsequent 8 Mahadasas use the full dasa period for each lord.
+/// Period boundaries are found by `advance_sun_degrees`: each Mahadasa ends when
+/// the Sun has traveled `lord.years × 360°` (tropical) from that Mahadasa's start.
 fn build_periods(
     starting_lord_idx: usize,
     balance_fraction:  f64,
-    birth_dt:          chrono::NaiveDateTime,
+    birth_jd:          f64,
+    tz:                &chrono_tz::Tz,
     lang:              &str,
-) -> Vec<MahadasaEntry> {
+) -> Result<Vec<MahadasaEntry>, String> {
     let mut periods = Vec::new();
-    // Cumulative day offset from birth_dt (always starts at 0.0 = birth)
-    let mut cumulative_days = 0.0_f64;
+    let mut current_jd = birth_jd;
 
     for i in 0..9_usize {
-        let lord_idx  = (starting_lord_idx + i) % 9;
-        let lord      = &DASA_SEQUENCE[lord_idx];
-        let full_days = lord.years as f64 * SOLAR_YEAR_DAYS;
+        let lord_idx     = (starting_lord_idx + i) % 9;
+        let lord         = &DASA_SEQUENCE[lord_idx];
+        let full_degrees = lord.years as f64 * 360.0;
 
         // First Mahadasa is partial (balance_fraction of full period).
-        let maha_days = if i == 0 { balance_fraction * full_days } else { full_days };
+        let maha_degrees    = if i == 0 { balance_fraction * full_degrees } else { full_degrees };
+        // Degrees already elapsed in the first Mahadasa before birth; 0 for the rest.
+        let elapsed_degrees = if i == 0 { (1.0 - balance_fraction) * full_degrees } else { 0.0 };
 
-        // Elapsed portion of the first Mahadasa that preceded birth.
-        let elapsed_days = if i == 0 { (1.0 - balance_fraction) * full_days } else { 0.0 };
+        let maha_start_jd = current_jd;
+        let maha_end_jd   = advance_sun_degrees(maha_start_jd, maha_degrees)?;
 
-        let maha_start_offset = cumulative_days;
-        let maha_end_offset   = cumulative_days + maha_days;
-
-        let start_date = offset_to_date(birth_dt, maha_start_offset);
-        let end_date   = offset_to_date(birth_dt, maha_end_offset);
+        let start_date = jd_to_local_date(maha_start_jd, tz);
+        let end_date   = jd_to_local_date(maha_end_jd, tz);
 
         let planet_name = get_string(&format!("planet.dasa.{}", lord.planet_key), lang);
         let dasa_maha   = get_string("dasa.maha", lang);
 
         let antardasas = build_antardasas(
             lord_idx,
-            full_days,       // proportional Antardasas use the FULL Mahadasa total
-            birth_dt,
-            maha_start_offset,
-            elapsed_days,
+            full_degrees,   // proportional Antardasas use the FULL Mahadasa degrees
+            maha_start_jd,
+            elapsed_degrees,
+            tz,
             lang,
-        );
+        )?;
 
         let is_current = antardasas.iter().any(|a| a.is_current);
 
@@ -294,18 +314,17 @@ fn build_periods(
             antardasas,
         });
 
-        cumulative_days = maha_end_offset;
+        current_jd = maha_end_jd;
     }
-    periods
+
+    Ok(periods)
 }
 
 // ---------------------------------------------------------------------------
-// T015 / T022-T024 — execute (entry point + error handling)
+// execute (entry point + error handling)
 // ---------------------------------------------------------------------------
 
-/// Entry point called by the bridge for `"vimsottari_dasa"`.
 pub fn execute(request: &str) -> String {
-    // T024 / FR-020 — JSON parse error
     let req: VimsottariRequest = match serde_json::from_str(request) {
         Ok(r)  => r,
         Err(e) => {
@@ -314,16 +333,21 @@ pub fn execute(request: &str) -> String {
         }
     };
 
-    // T022 / FR-014 — unknown cityId
-    let city = match cities::CITIES.iter().find(|c| c.city_id == req.city_id) {
+    let all_cities = match city_data::cities() {
+        Ok(c)  => c,
+        Err(e) => {
+            let msg = e.replace('"', "\\\"");
+            return format!("{{\"error\":\"cities.csv error: {msg}\"}}");
+        }
+    };
+    let city = match all_cities.iter().find(|c| c.city_id == req.city_id) {
         Some(c) => c,
         None    => return format!("{{\"error\":\"city not found: cityId={}\"}}",  req.city_id),
     };
 
-    let (lat, lng) = data::decode_city_id(req.city_id);
+    let (lat, lng) = city_data::decode_city_id(req.city_id);
 
-    // T023 / FR-015 — malformed localTime
-    let jd = match utils::local_to_jd(&req.local_time, city.timezone) {
+    let jd = match utils::local_to_jd(&req.local_time, &city.timezone) {
         Ok(jd)  => jd,
         Err(e)  => {
             let msg = e.replace('"', "\\\"");
@@ -331,14 +355,17 @@ pub fn execute(request: &str) -> String {
         }
     };
 
-    // Configure Swiss Ephemeris (identical to horoscope engine)
+    let tz: chrono_tz::Tz = match city.timezone.parse() {
+        Ok(tz)  => tz,
+        Err(_)  => return format!("{{\"error\":\"invalid timezone: '{}'\"}}", city.timezone),
+    };
+
     let ephe = ephe_path();
     unsafe {
         swe_wrappers::swe_set_ephe_path(ephe.as_ptr() as *const c_char);
         swe_wrappers::swe_set_sid_mode(SE_SIDM_TRUE_CITRA, 0.0, 0.0);
     }
 
-    // FR-002 — Moon sidereal longitude
     let moon_lon = match swe_wrappers::calc_planet(jd, SE_MOON) {
         Ok(lon)  => lon,
         Err(e)   => {
@@ -347,26 +374,18 @@ pub fn execute(request: &str) -> String {
         }
     };
 
-    // FR-002/FR-003 — Nakshatra identification and lord index
     let (_, _, _, _, nakshatra_num, _) = utils::decompose_longitude(moon_lon);
     let starting_lord_idx = nakshatra_to_lord_index(nakshatra_num);
+    let balance_fraction  = compute_balance_fraction(moon_lon, nakshatra_num);
 
-    // FR-004 — Balance fraction
-    let balance_fraction = compute_balance_fraction(moon_lon, nakshatra_num);
-
-    // FR-006 — Parse birth datetime preserving time-of-day (do NOT truncate to date)
-    let birth_dt = match chrono::NaiveDateTime::parse_from_str(&req.local_time, "%Y-%m-%dT%H:%M:%S") {
-        Ok(dt)  => dt,
-        Err(_)  => {
-            // Should not reach here — local_to_jd already validated the format.
-            return format!("{{\"error\":\"internal: cannot re-parse localTime\"}}");
+    let periods = match build_periods(starting_lord_idx, balance_fraction, jd, &tz, &req.lang) {
+        Ok(p)  => p,
+        Err(e) => {
+            let msg = e.replace('"', "\\\"");
+            return format!("{{\"error\":\"period computation failed: {msg}\"}}");
         }
     };
 
-    // Build periods (FR-007–FR-012)
-    let periods = build_periods(starting_lord_idx, balance_fraction, birth_dt, &req.lang);
-
-    // FR-019 — City echo fields (resolve translations for requested lang)
     let translation = city.translations.iter()
         .find(|(l, _)| *l == req.lang)
         .or_else(|| city.translations.iter().find(|(l, _)| *l == "en"))
@@ -396,10 +415,9 @@ pub fn execute(request: &str) -> String {
 }
 
 // ---------------------------------------------------------------------------
-// TR003 — Unit tests for is_period_current helper logic
+// Unit tests
 // ---------------------------------------------------------------------------
 
-/// Pure helper extracted for testability: true if today is within [start, end).
 fn is_period_current(start: chrono::NaiveDate, end: chrono::NaiveDate, today: chrono::NaiveDate) -> bool {
     start <= today && today < end
 }

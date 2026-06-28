@@ -22,6 +22,13 @@ import type { VimsottariPanelProps } from '../types';
 export default function VimsottariPanel({ dasa, loading, error, lang }: VimsottariPanelProps) {
   const t = getT(lang);
 
+  // Telugu glyphs render taller/wider than Latin; shrink the section fonts so
+  // labels and date columns stay compact on the Telugu horoscope page.
+  const isTe = lang === 'te';
+  const headingFontSize = isTe ? '1rem' : undefined;
+  const labelFontSize = isTe ? '0.85rem' : undefined;
+  const dateFontSize = isTe ? '0.8rem' : undefined;
+
   const [expanded, setExpanded] = useState<Set<number>>(() => {
     if (!dasa) return new Set();
     const idx = dasa.periods.findIndex(p => p.isCurrent);
@@ -38,7 +45,7 @@ export default function VimsottariPanel({ dasa, loading, error, lang }: Vimsotta
 
   return (
     <Box sx={{ mt: 3 }}>
-      <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>
+      <Typography variant="h6" fontWeight={700} sx={{ mb: 1, fontSize: headingFontSize }}>
         {t.vimsottariDasa}
       </Typography>
 
@@ -76,12 +83,13 @@ export default function VimsottariPanel({ dasa, loading, error, lang }: Vimsotta
                     <Typography
                       fontWeight={mahaActive ? 700 : 400}
                       color={mahaActive ? 'primary.main' : 'inherit'}
+                      sx={{ fontSize: labelFontSize }}
                     >
                       {maha.label}
                     </Typography>
                     <Box sx={{ display: 'flex', mt: '2px' }}>
-                      <Typography sx={{ width: '50%', pl: 2, pb: '4px' }}>{maha.startDate}</Typography>
-                      <Typography sx={{ width: '50%', pb: '4px' }}>{maha.endDate}</Typography>
+                      <Typography sx={{ width: '50%', pl: 2, pb: '4px', fontSize: dateFontSize }}>{maha.startDate}</Typography>
+                      <Typography sx={{ width: '50%', pb: '4px', fontSize: dateFontSize }}>{maha.endDate}</Typography>
                     </Box>
                   </Box>
                 </AccordionSummary>
@@ -102,10 +110,10 @@ export default function VimsottariPanel({ dasa, loading, error, lang }: Vimsotta
                           pb: '4px',
                         }}
                       >
-                        <Typography sx={{ pl: 2, fontWeight: antarActive ? 600 : 400 }}>{antar.label}</Typography>
+                        <Typography sx={{ pl: 2, fontWeight: antarActive ? 600 : 400, fontSize: labelFontSize }}>{antar.label}</Typography>
                         <Box sx={{ display: 'flex', mt: '2px' }}>
-                          <Typography sx={{ width: '50%', pl: 2, pb: '4px' }}>{antar.startDate}</Typography>
-                          <Typography sx={{ width: '50%', pb: '4px' }}>{antar.endDate}</Typography>
+                          <Typography sx={{ width: '50%', pl: 2, pb: '4px', fontSize: dateFontSize }}>{antar.startDate}</Typography>
+                          <Typography sx={{ width: '50%', pb: '4px', fontSize: dateFontSize }}>{antar.endDate}</Typography>
                         </Box>
                       </Box>
                     );

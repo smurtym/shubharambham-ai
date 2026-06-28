@@ -5,6 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
+at specs/012-runtime-city-csv/plan.md
 <!-- SPECKIT END -->
 
 ## What This Is
@@ -62,7 +63,8 @@ Before `./build.sh` will work:
 - **`engines/horoscope.rs`** — planetary positions via Swiss Ephemeris with True Chitrapaksha Ayanamsa
 - **`engines/vimsottari.rs`** — Vimsottari Dasa/Antardasa period calculation from Moon's nakshatra
 - **`swe_wrappers.rs`** — raw FFI bindings to `libswe.a`
-- **`data/`** — city data; `build.rs` codegen reads `data/cities.csv` → `$OUT_DIR/cities_generated.rs` at compile time
+- **`engines/cities.rs`** — city listing engine; dispatches `list_cities` operation
+- **`data/`** — city data; `data::cities()` lazy-loads `ephe/cities.csv` at runtime via `OnceLock<Vec<CityRecord>>`
 - **`localization.rs`**, **`locales/`** — English and Telugu string tables
 
 The `build.rs` dual-path pattern: when `TARGET` contains `emscripten`, it links the pre-built `lib/libswe.a` (from Phase 2) and emits emcc flags via `cargo:rustc-link-arg`; otherwise it compiles swisseph sources directly via the `cc` crate so `cargo test` works without Emscripten.
@@ -81,5 +83,5 @@ The `build.rs` dual-path pattern: when `TARGET` contains `emscripten`, it links 
 
 - `canonicalName` in city records is always ASCII English regardless of `lang` — used as stable city key across languages.
 - The `lang` field in all requests selects both the city name script (`te` = Telugu script) and planet/nakshatra label translations.
-- Ephemeris path differs by compilation target: `/ephe/` in WASM (Emscripten virtual FS preload), `../ephe/` in native `cargo test`.
+- City data and ephemeris path both differ by compilation target: `/ephe/` in WASM (Emscripten virtual FS preload), `../ephe/` in native `cargo test`. `ephe/cities.csv` is the sole source of truth for city data — edit it without recompiling.
 - `RUSTFLAGS` env var silently overrides `.cargo/config.toml` — do not set it when building for WASM.

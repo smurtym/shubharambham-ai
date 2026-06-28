@@ -1,17 +1,6 @@
 use crate::engines;
-use crate::data;
 use std::ffi::CStr;
 use std::os::raw::c_char;
-
-// ---------------------------------------------------------------------------
-// Request shapes
-// ---------------------------------------------------------------------------
-
-#[derive(serde::Deserialize)]
-struct CitiesRequest {
-    operation: String,
-    lang:      String,
-}
 
 // ---------------------------------------------------------------------------
 // Response helpers
@@ -75,45 +64,12 @@ pub extern "C" fn bridge(
     };
 
     match op {
-        "stub_op"       => {
-            match engines::stub::handle_stub("") {
-                Ok(r)  => { let j = format!("{{\"value\":\"{}\"}}", r.value); write_json(&j, output_ptr, output_max_len) }
-                Err(e) => write_error(&e, -3, output_ptr, output_max_len),
-            }
-        },
-        "list_cities"          => dispatch_list_cities(op, input, output_ptr, output_max_len),
-        "horoscope_positions"  => {
-            let json = engines::horoscope::execute(input);
-            write_json(&json, output_ptr, output_max_len)
-        },
-        "vimsottari_dasa"      => {
-            let json = engines::vimsottari::execute(input);
-            write_json(&json, output_ptr, output_max_len)
-        },
-        _ => write_error(&format!("unknown operation: {op}"), -1, output_ptr, output_max_len),
+        "stub_op"             => write_json(&engines::stub::execute(input),       output_ptr, output_max_len),
+        "list_cities"         => write_json(&engines::cities::execute(input),     output_ptr, output_max_len),
+        "horoscope_positions" => write_json(&engines::horoscope::execute(input),  output_ptr, output_max_len),
+        "vimsottari_dasa"     => write_json(&engines::vimsottari::execute(input), output_ptr, output_max_len),
+        _                     => write_error(&format!("unknown operation: {op}"), -1, output_ptr, output_max_len),
     }
-}
-
-fn dispatch_list_cities(
-    op:             &str,
-    input:          &str,
-    output_ptr:     *mut c_char,
-    output_max_len: i32,
-) -> i32 {
-    let req: CitiesRequest = match serde_json::from_str(input) {
-        Ok(r)  => r,
-        Err(e) => return write_error(&format!("JSON parse error: {e}"), -2, output_ptr, output_max_len),
-    };
-    if req.operation != op {
-        return write_error(
-            &format!("operation mismatch: op_ptr={op} body={}", req.operation),
-            -2,
-            output_ptr,
-            output_max_len,
-        );
-    }
-    let json = data::list_cities(&req.lang);
-    write_json(&json, output_ptr, output_max_len)
 }
 
 // ---------------------------------------------------------------------------
@@ -146,16 +102,20 @@ mod tests {
     }
 
     #[test]
-    fn test_bridge_malformed_json_returns_minus2() {
-        let (ret, _) = call_bridge(b"list_cities\0", b"not-json\0");
-        assert_eq!(ret, -2);
+    fn test_bridge_malformed_json_returns_error() {
+        let (ret, output) = call_bridge(b"list_cities\0", b"not-json\0");
+        assert!(ret > 0, "expected positive bytes even on error");
+        let json: serde_json::Value = serde_json::from_slice(&output[..ret as usize]).unwrap();
+        assert!(json["error"].as_str().is_some(), "expected 'error' key");
     }
 
     #[test]
-    fn test_bridge_operation_mismatch_returns_minus2() {
+    fn test_bridge_operation_mismatch_returns_error() {
         let input = b"{\"operation\":\"other_op\",\"lang\":\"en\"}\0";
-        let (ret, _) = call_bridge(b"list_cities\0", input);
-        assert_eq!(ret, -2);
+        let (ret, output) = call_bridge(b"list_cities\0", input);
+        assert!(ret > 0, "expected positive bytes even on error");
+        let json: serde_json::Value = serde_json::from_slice(&output[..ret as usize]).unwrap();
+        assert!(json["error"].as_str().is_some(), "expected 'error' key");
     }
 
     // -----------------------------------------------------------------------
@@ -172,8 +132,10 @@ mod tests {
         let cities = json["cities"].as_array().expect("cities array present");
         // Derive expected count from CITIES so adding en-translated cities
         // requires no test edits.
-        let expected = crate::data::cities::CITIES.iter()
-            .filter(|r| r.translations.iter().any(|(l, _)| *l == "en"))
+        let expected = crate::city_data::cities()
+            .expect("cities.csv must be readable in test environment")
+            .iter()
+            .filter(|r| r.translations.iter().any(|(l, _)| l.as_str() == "en"))
             .count();
         assert_eq!(cities.len(), expected,
             "en response has {} cities but {} have en translations", cities.len(), expected);
@@ -196,14 +158,14 @@ mod tests {
             .collect();
         // Derive presence/absence expectations from CITIES rather than hardcoding
         // city names — adding a te translation to any city keeps the test correct.
-        for rec in crate::data::cities::CITIES {
-            let has_te = rec.translations.iter().any(|(l, _)| *l == "te");
+        for rec in crate::city_data::cities().expect("cities.csv must be readable in test environment") {
+            let has_te = rec.translations.iter().any(|(l, _)| l.as_str() == "te");
             if has_te {
-                assert!(canonical_names.contains(rec.canonical_name),
+                assert!(canonical_names.contains(rec.canonical_name.as_str()),
                     "'{}' has a te translation but is absent from the te bridge response",
                     rec.canonical_name);
             } else {
-                assert!(!canonical_names.contains(rec.canonical_name),
+                assert!(!canonical_names.contains(rec.canonical_name.as_str()),
                     "'{}' has no te translation but appears in the te bridge response",
                     rec.canonical_name);
             }
@@ -232,7 +194,7 @@ mod tests {
     }
 
     // -----------------------------------------------------------------------
-    // T021 — FR-012: missing `lang` field returns -2 + error JSON
+    // T021 — FR-012: missing `lang` field returns error JSON
     // -----------------------------------------------------------------------
 
     #[test]
@@ -240,9 +202,8 @@ mod tests {
         // JSON is valid but `lang` field is absent — CitiesRequest deserialisation fails.
         let input = b"{\"operation\":\"list_cities\"}\0";
         let (ret, output) = call_bridge(b"list_cities\0", input);
-        assert_eq!(ret, -2, "expected -2 for missing lang field");
-        let trimmed: Vec<u8> = output.iter().copied().take_while(|&b| b != 0).collect();
-        let json: serde_json::Value = serde_json::from_slice(&trimmed)
+        assert!(ret > 0, "expected positive bytes even on error");
+        let json: serde_json::Value = serde_json::from_slice(&output[..ret as usize])
             .expect("error response is valid JSON");
         assert!(json["error"].as_str().is_some(), "expected 'error' key in response");
         assert!(json["cities"].is_null(), "must not have 'cities' key on error");

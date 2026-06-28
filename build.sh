@@ -58,7 +58,7 @@ if [[ ! -f "$REPO_ROOT/vendor/swisseph/sweph.c" ]]; then
 fi
 
 # 1c. Ephemeris data files present
-for EPHE_FILE in semo_18.se1 sepl_18.se1; do
+for EPHE_FILE in semo_18.se1 sepl_18.se1 sefstars.txt; do
   if [[ ! -s "$REPO_ROOT/ephe/$EPHE_FILE" ]]; then
     fail "ephe/$EPHE_FILE not found or empty.\nDownload from: https://www.astro.com/ftp/swisseph/ephe/$EPHE_FILE"
   fi

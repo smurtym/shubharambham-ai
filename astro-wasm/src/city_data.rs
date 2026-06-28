@@ -1,27 +1,129 @@
-pub mod cities;
-
+use std::collections::HashMap;
 use std::f64::consts::PI;
+use std::sync::OnceLock;
 
 // ---------------------------------------------------------------------------
-// Internal data model
+// Internal data model (runtime-loaded; fields are owned Strings)
 // ---------------------------------------------------------------------------
 
-/// Authoritative city record — compiled into the WASM binary. Never serialised
-/// directly; a `CityResponse` is built per-request from this + one translation.
 pub struct CityRecord {
     pub city_id:        u32,
-    pub canonical_name: &'static str,
-    pub timezone:       &'static str,
-    pub translations:   &'static [(&'static str, TranslationEntry)],
+    pub canonical_name: String,
+    pub timezone:       String,
+    pub translations:   Vec<(String, TranslationEntry)>,
 }
 
-/// Language-specific display strings and sort keys for one city.
 pub struct TranslationEntry {
-    pub city_name:     &'static str,
-    pub region1:       &'static str,
-    pub region2:       &'static str,
+    pub city_name:     String,
+    pub region1:       String,
+    pub region2:       String,
     pub region1_order: u16,
     pub region2_order: u16,
+}
+
+// ---------------------------------------------------------------------------
+// Runtime CSV loading
+// ---------------------------------------------------------------------------
+
+fn cities_csv_path() -> &'static str {
+    if cfg!(test) { "../ephe/cities.csv" } else { "/ephe/cities.csv" }
+}
+
+fn load_cities_from_csv() -> Result<Vec<CityRecord>, String> {
+    let path = cities_csv_path();
+    let content = std::fs::read_to_string(path)
+        .map_err(|e| format!("cannot read {path}: {e}"))?;
+
+    struct Row {
+        city_id:       u32,
+        canonical:     String,
+        timezone:      String,
+        lang:          String,
+        city_name:     String,
+        region1:       String,
+        region2:       String,
+        region1_order: u16,
+        region2_order: u16,
+    }
+
+    let mut rows: Vec<Row> = Vec::new();
+    for raw in content.lines() {
+        let line = raw.trim();
+        if line.is_empty() || line.starts_with('#') || line.starts_with("city_id") {
+            continue;
+        }
+        let cols: Vec<&str> = line.split(',').collect();
+        if cols.len() != 9 {
+            continue;
+        }
+        let city_id = match cols[0].trim().parse::<u32>() {
+            Ok(v) => v,
+            Err(_) => continue,
+        };
+        let canonical = cols[1].trim().to_string();
+        if canonical.is_empty() {
+            continue;
+        }
+        let region1_order = match cols[7].trim().parse::<u16>() {
+            Ok(v) => v,
+            Err(_) => continue,
+        };
+        let region2_order = match cols[8].trim().parse::<u16>() {
+            Ok(v) => v,
+            Err(_) => continue,
+        };
+        rows.push(Row {
+            city_id,
+            canonical,
+            timezone:      cols[2].trim().to_string(),
+            lang:          cols[3].trim().to_string(),
+            city_name:     cols[4].trim().to_string(),
+            region1:       cols[5].trim().to_string(),
+            region2:       cols[6].trim().to_string(),
+            region1_order,
+            region2_order,
+        });
+    }
+
+    let mut city_order: Vec<u32> = Vec::new();
+    let mut city_map: HashMap<u32, (String, String, Vec<(String, TranslationEntry)>)> =
+        HashMap::new();
+
+    for row in rows {
+        let id = row.city_id;
+        if !city_map.contains_key(&id) {
+            city_order.push(id);
+            city_map.insert(id, (row.canonical, row.timezone, Vec::new()));
+        }
+        city_map.get_mut(&id).unwrap().2.push((
+            row.lang,
+            TranslationEntry {
+                city_name:     row.city_name,
+                region1:       row.region1,
+                region2:       row.region2,
+                region1_order: row.region1_order,
+                region2_order: row.region2_order,
+            },
+        ));
+    }
+
+    let mut result: Vec<CityRecord> = Vec::with_capacity(city_order.len());
+    for id in city_order {
+        let (canonical_name, timezone, translations) = city_map.remove(&id).unwrap();
+        result.push(CityRecord { city_id: id, canonical_name, timezone, translations });
+    }
+    Ok(result)
+}
+
+static CITY_CACHE: OnceLock<Vec<CityRecord>> = OnceLock::new();
+
+pub fn cities() -> Result<&'static [CityRecord], String> {
+    if let Some(v) = CITY_CACHE.get() {
+        return Ok(v.as_slice());
+    }
+    let loaded = load_cities_from_csv()?;
+    let _ = CITY_CACHE.set(loaded);
+    Ok(CITY_CACHE.get().expect("just set above").as_slice())
 }
 
 // ---------------------------------------------------------------------------
@@ -83,47 +185,38 @@ pub struct CityListResponse {
 }
 
 // ---------------------------------------------------------------------------
-// Compile-time data integrity (T017)
-// ---------------------------------------------------------------------------
-
-#[allow(dead_code)] // invoked at compile time via `const _: () = ...` below
-const fn validate_canonical_names() {
-    let cities = cities::CITIES;
-    let mut i = 0;
-    while i < cities.len() {
-        if cities[i].canonical_name.is_empty() {
-            panic!("CityRecord has empty canonical_name");
-        }
-        i += 1;
-    }
-}
-const _: () = validate_canonical_names();
-
-// ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
 
-/// Filter `CITIES` to those with a translation for `lang`, build sorted
+/// Filter cities to those with a translation for `lang`, build sorted
 /// `CityResponse` objects, and return the result as a JSON string.
 ///
 /// Returns `{"cities":[...]}` on success or `{"error":"..."}` on failure.
 pub fn list_cities(lang: &str) -> String {
-    let mut responses: Vec<CityResponse> = cities::CITIES
+    let all_cities = match cities() {
+        Ok(c) => c,
+        Err(e) => {
+            let msg = e.replace('"', "\\\"");
+            return format!("{{\"error\":\"cities.csv error: {msg}\"}}");
+        }
+    };
+
+    let mut responses: Vec<CityResponse> = all_cities
         .iter()
         .filter_map(|rec| {
             rec.translations
                 .iter()
-                .find(|(code, _)| *code == lang)
+                .find(|(code, _)| code.as_str() == lang)
                 .map(|(_, tr)| {
                     let (lat, lng) = decode_city_id(rec.city_id);
                     CityResponse {
                         lang:           lang.to_owned(),
                         city_id:        rec.city_id,
-                        time_zone:      rec.timezone.to_owned(),
-                        canonical_name: rec.canonical_name.to_owned(),
-                        city_name:      tr.city_name.to_owned(),
-                        region1:        tr.region1.to_owned(),
-                        region2:        tr.region2.to_owned(),
+                        time_zone:      rec.timezone.clone(),
+                        canonical_name: rec.canonical_name.clone(),
+                        city_name:      tr.city_name.clone(),
+                        region1:        tr.region1.clone(),
+                        region2:        tr.region2.clone(),
                         lat,
                         lng,
                         region1_order:  tr.region1_order,
@@ -158,11 +251,11 @@ mod tests {
     use super::*;
     use std::collections::HashSet;
 
-    // Helper: count CITIES entries that have a translation for `lang`.
+    // Helper: count city records that have a translation for `lang`.
     fn expected_count(lang: &str) -> usize {
-        cities::CITIES
+        cities().expect("cities.csv must be readable in test environment")
             .iter()
-            .filter(|rec| rec.translations.iter().any(|(l, _)| *l == lang))
+            .filter(|rec| rec.translations.iter().any(|(l, _)| l.as_str() == lang))
             .count()
     }
 
@@ -182,11 +275,9 @@ mod tests {
         let json = list_cities("en");
         let v: serde_json::Value = serde_json::from_str(&json).unwrap();
         let cities = v["cities"].as_array().unwrap();
-        // Count is derived from CITIES so adding more en-translated cities
-        // keeps this test green without any edits.
         let exp = expected_count("en");
         assert_eq!(cities.len(), exp,
-            "en response has {} cities but {} have en translations in CITIES",
+            "en response has {} cities but {} have en translations in cities.csv",
             cities.len(), exp);
         for city in cities {
             assert!(city["lang"].as_str().is_some() && !city["lang"].as_str().unwrap().is_empty());
@@ -206,10 +297,9 @@ mod tests {
         let json = list_cities("te");
         let v: serde_json::Value = serde_json::from_str(&json).unwrap();
         let cities = v["cities"].as_array().unwrap();
-        // Count is derived from CITIES — adding Telugu to more cities keeps this green.
         let exp = expected_count("te");
         assert_eq!(cities.len(), exp,
-            "te response has {} cities but {} have te translations in CITIES",
+            "te response has {} cities but {} have te translations in cities.csv",
             cities.len(), exp);
         for city in cities {
             let name = city["cityName"].as_str().unwrap();
@@ -225,15 +315,12 @@ mod tests {
         let json = list_cities("te");
         let v: serde_json::Value = serde_json::from_str(&json).unwrap();
         let cities = v["cities"].as_array().unwrap();
-        // Assert pairwise relative order rather than absolute positions so the
-        // test survives other cities being inserted before or between these.
         if let (Some(hyd), Some(eluru)) = (find_pos(cities, "Hyderabad"), find_pos(cities, "Eluru")) {
             assert!(hyd < eluru, "Hyderabad must precede Eluru in te (lower region1_order)");
         }
         if let (Some(hyd), Some(vij)) = (find_pos(cities, "Hyderabad"), find_pos(cities, "Vijayawada")) {
             assert!(hyd < vij,   "Hyderabad must precede Vijayawada in te (lower region1_order)");
         }
-        // Eluru and Vijayawada share region1_order=2; city_name tie-break: "ఏలూరు" < "విజయవాడ".
         if let (Some(eluru), Some(vij)) = (find_pos(cities, "Eluru"), find_pos(cities, "Vijayawada")) {
             assert!(eluru < vij,
                 "Eluru must sort before Vijayawada (city_name tie-break); \
@@ -246,16 +333,12 @@ mod tests {
         let json = list_cities("en");
         let v: serde_json::Value = serde_json::from_str(&json).unwrap();
         let cities = v["cities"].as_array().unwrap();
-        // Relative-order assertions — robust to additional cities being inserted.
-        // India (region2_order=1) before USA (region2_order=2).
         if let (Some(hyd), Some(ny)) = (find_pos(cities, "Hyderabad"), find_pos(cities, "New York")) {
             assert!(hyd < ny, "Hyderabad (India) must precede New York (USA)");
         }
-        // Within India: Delhi (region1_order=1) before Hyderabad (region1_order=2).
         if let (Some(del), Some(hyd)) = (find_pos(cities, "Delhi"), find_pos(cities, "Hyderabad")) {
             assert!(del < hyd, "Delhi must precede Hyderabad in en (lower region1_order)");
         }
-        // Eluru/Vijayawada both have region1_order=3; city_name tie-break: "Eluru" < "Vijayawada".
         if let (Some(eluru), Some(vij)) = (find_pos(cities, "Eluru"), find_pos(cities, "Vijayawada")) {
             assert!(eluru < vij,
                 "Eluru must sort before Vijayawada in en (city_name tie-break); \
@@ -276,27 +359,23 @@ mod tests {
 
     #[test]
     fn test_list_cities_te_excludes_en_only() {
-        // Derive expectations from CITIES itself: any city whose translation slice
-        // lacks an entry for "te" must be absent, and any city that has one must
-        // be present.  This stays correct regardless of which cities gain or lose
-        // Telugu translations in the future.
         let json = list_cities("te");
         let v: serde_json::Value = serde_json::from_str(&json).unwrap();
         let canonical_names: Vec<&str> = v["cities"].as_array().unwrap()
             .iter()
             .map(|c| c["canonicalName"].as_str().unwrap())
             .collect();
-        for rec in cities::CITIES {
-            let has_te = rec.translations.iter().any(|(l, _)| *l == "te");
+        for rec in cities().expect("cities.csv must be readable in test environment") {
+            let has_te = rec.translations.iter().any(|(l, _)| l.as_str() == "te");
             if has_te {
                 assert!(
-                    canonical_names.contains(&rec.canonical_name),
+                    canonical_names.contains(&rec.canonical_name.as_str()),
                     "'{}' has a te translation but is absent from the te response",
                     rec.canonical_name
                 );
             } else {
                 assert!(
-                    !canonical_names.contains(&rec.canonical_name),
+                    !canonical_names.contains(&rec.canonical_name.as_str()),
                     "'{}' has no te translation but appears in the te response — \
                      if you added a te translation, the test is already passing",
                     rec.canonical_name
@@ -319,8 +398,6 @@ mod tests {
 
     #[test]
     fn test_canonical_name_always_english() {
-        // canonicalName must be ASCII for every language.  Checking is_ascii()
-        // is strictly correct and scales to any number of cities or languages.
         for lang in &["te", "en"] {
             let json = list_cities(lang);
             let v: serde_json::Value = serde_json::from_str(&json).unwrap();
@@ -348,16 +425,11 @@ mod tests {
         }
     }
 
-    // -----------------------------------------------------------------------
-    // T017 — Compile-time validation is a const fn invoked at module level.
-    //         This test documents the expectation.
-    // -----------------------------------------------------------------------
-
     // T018 — Data integrity tests
     #[test]
     fn test_city_ids_unique() {
         let mut seen = HashSet::new();
-        for rec in cities::CITIES {
+        for rec in cities().expect("cities.csv must be readable in test environment") {
             assert!(seen.insert(rec.city_id), "duplicate city_id: {}", rec.city_id);
         }
     }
@@ -382,9 +454,9 @@ mod tests {
             "Europe/Vienna", "Europe/Warsaw",
             "Pacific/Auckland",
         ];
-        for rec in cities::CITIES {
+        for rec in cities().expect("cities.csv must be readable in test environment") {
             assert!(
-                VALID_TIMEZONES.contains(&rec.timezone),
+                VALID_TIMEZONES.contains(&rec.timezone.as_str()),
                 "unknown timezone '{}' for city '{}'", rec.timezone, rec.canonical_name
             );
         }
